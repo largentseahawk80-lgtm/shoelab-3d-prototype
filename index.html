@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ShoeLab 3D Phone Prototype</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --panel: #151518;
+      --text: #f5f5f7;
+      --muted: #9b9ba1;
+      --line: #2b2b31;
+      --gold: #e8c95a;
+      --blue: #6aa8ff;
+      --green: #7cffb2;
+      --danger: #ff6a6a;
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #1c1c22 0, var(--bg) 42%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 22px 16px 120px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding-top: env(safe-area-inset-top);
+    }
+
+    h1 {
+      font-size: 44px;
+      line-height: 0.95;
+      margin: 12px 0 8px;
+      letter-spacing: -1.5px;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 19px;
+    }
+
+    .badge {
+      margin-top: 14px;
+      color: var(--gold);
+      border: 2px solid rgba(232,201,90,.38);
+      background: rgba(232,201,90,.12);
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .card {
+      background: rgba(21,21,24,.86);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-top: 20px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.32);
+      backdrop-filter: blur(14px);
+    }
+
+    .step-title {
+      font-size: 25px;
+      margin: 0 0 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    button,
+    .file-btn {
+      border: 1px solid var(--line);
+      background: #050506;
+      color: var(--text);
+      border-radius: 24px;
+      min-height: 58px;
+      font-size: 18px;
+      font-weight: 750;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    button.active {
+      background: var(--text);
+      color: #050506;
+      border-color: var(--text);
+    }
+
+    .file-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(106,168,255,.18), rgba(124,255,178,.12));
+      border-color: rgba(106,168,255,.32);
+      margin-top: 12px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.15 / 1;
+      border-radius: 30px;
+      overflow: hidden;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,0)),
+        radial-gradient(circle at 60% 30%, rgba(106,168,255,.18), transparent 38%),
+        #09090b;
+      border: 1px solid var(--line);
+      touch-action: none;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .shoe-layer {
+      z-index: 1;
+    }
+
+    .draw-layer {
+      z-index: 2;
+    }
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .tool {
+      min-height: 50px;
+      border-radius: 18px;
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .swatch {
+      min-height: 48px;
+      border-radius: 18px;
+      border: 3px solid transparent;
+    }
+
+    .swatch.active {
+      border-color: white;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      color: #050506;
+      border: 0;
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(10,10,12,.78);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+
+    .footer-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin: 12px 0 0;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <section class="top">
+      <div>
+        <h1>ShoeLab 3D</h1>
+        <p class="sub">Custom shoe phone prototype</p>
+      </div>
+      <div class="badge">Ready</div>
+    </section>
+
+    <section class="card">
+      <h2 class="step-title">1. Pick shoe</h2>
+
+      <div class="grid" id="shoeButtons">
+        <button class="active" data-shoe="low">Low Top</button>
+        <button data-shoe="high">High Top</button>
+        <button data-shoe="boot">Boot</button>
+        <button data-shoe="slide">Slide</button>
+      </div>
+
+      <label class="file-btn">
+        Upload shoe image
+        <input id="upload" type="file" accept="image/*" />
+      </label>
+    </section>
+
+    <section class="card">
+      <h2 class="step-title">2. Design canvas</h2>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas class="shoe-layer" id="shoeCanvas"></canvas>
+        <canvas class="draw-layer" id="drawCanvas"></canvas>
+      </div>
+
+      <div class="tools">
+        <button class="tool active" data-tool="brush">Brush</button>
+        <button class="tool" data-tool="fade">Fade</button>
+        <button class="tool" data-tool="highlight">Highlight</button>
+        <button class="tool" data-tool="eraser">Erase</button>
+      </div>
+
+      <div class="color-row" id="colors">
+        <button class="swatch active" data-color="#ffffff" style="background:#ffffff"></button>
+        <button class="swatch" data-color="#ff4b4b" style="background:#ff4b4b"></button>
+        <button class="swatch" data-color="#6aa8ff" style="background:#6aa8ff"></button>
+        <button class="swatch" data-color="#7cffb2" style="background:#7cffb2"></button>
+        <button class="swatch" data-color="#e8c95a" style="background:#e8c95a"></button>
+        <button class="swatch" data-color="#a36aff" style="background:#a36aff"></button>
+      </div>
+
+      <div class="range-row">
+        <span>Size</span>
+        <input id="size" type="range" min="4" max="42" value="14" />
+      </div>
+
+      <div class="actions">
+        <button id="clear" class="danger">Clear art</button>
+        <button id="save" class="primary">Save image</button>
+      </div>
+
+      <p class="tiny">
+        Prototype behavior: pick shoe, upload image if wanted, draw on the silhouette, save the design image.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="step-title">3. Build target</h2>
+      <p class="tiny">
+        Next production version: true 3D model, rotate shoe, layers, undo, text tool, decals, AI blank-shoe cutout, saved projects, iPhone home-screen install.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <button id="blank" class="primary">Blank Canvas</button>
+      <button id="demo">Demo Art</button>
+    </div>
+  </footer>
+
+  <script>
+    const shoeCanvas = document.getElementById('shoeCanvas');
+    const drawCanvas = document.getElementById('drawCanvas');
+    const wrap = document.getElementById('canvasWrap');
+    const sctx = shoeCanvas.getContext('2d');
+    const dctx = drawCanvas.getContext('2d');
+
+    let shoe = 'low';
+    let tool = 'brush';
+    let color = '#ffffff';
+    let size = 14;
+    let drawing = false;
+    let uploadedImage = null;
+
+    function resize() {
+      const r = wrap.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+
+      [shoeCanvas, drawCanvas].forEach(c => {
+        c.width = Math.round(r.width * scale);
+        c.height = Math.round(r.height * scale);
+        c.style.width = r.width + 'px';
+        c.style.height = r.height + 'px';
+      });
+
+      sctx.setTransform(scale, 0, 0, scale, 0, 0);
+      dctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+      drawShoe();
+    }
+
+    function drawShoe() {
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+
+      sctx.clearRect(0, 0, w, h);
+      sctx.save();
+
+      sctx.shadowColor = 'rgba(0,0,0,.55)';
+      sctx.shadowBlur = 24;
+      sctx.shadowOffsetY = 16;
+
+      if (uploadedImage) {
+        sctx.globalAlpha = .72;
+        sctx.drawImage(uploadedImage, 0, 0, w, h);
+        sctx.globalAlpha = 1;
+      }
+
+      const grad = sctx.createLinearGradient(0, h * .2, w, h * .85);
+      grad.addColorStop(0, '#f8f8f8');
+      grad.addColorStop(.55, '#d7d7d7');
+      grad.addColorStop(1, '#9f9f9f');
+
+      sctx.fillStyle = grad;
+      sctx.strokeStyle = 'rgba(255,255,255,.75)';
+      sctx.lineWidth = 3;
+      sctx.beginPath();
+
+      if (shoe === 'low') {
+        sctx.moveTo(w*.13,h*.58);
+        sctx.quadraticCurveTo(w*.24,h*.44,w*.42,h*.45);
+        sctx.quadraticCurveTo(w*.56,h*.47,w*.65,h*.57);
+        sctx.quadraticCurveTo(w*.78,h*.58,w*.9,h*.68);
+        sctx.quadraticCurveTo(w*.78,h*.78,w*.43,h*.76);
+        sctx.quadraticCurveTo(w*.2,h*.74,w*.1,h*.66);
+        sctx.closePath();
+      }
+
+      if (shoe === 'high') {
+        sctx.moveTo(w*.15,h*.68);
+        sctx.lineTo(w*.28,h*.32);
+        sctx.quadraticCurveTo(w*.48,h*.28,w*.6,h*.5);
+        sctx.quadraticCurveTo(w*.77,h*.55,w*.9,h*.68);
+        sctx.quadraticCurveTo(w*.76,h*.79,w*.42,h*.77);
+        sctx.quadraticCurveTo(w*.2,h*.75,w*.15,h*.68);
+        sctx.closePath();
+      }
+
+      if (shoe === 'boot') {
+        sctx.moveTo(w*.16,h*.72);
+        sctx.lineTo(w*.24,h*.25);
+        sctx.lineTo(w*.52,h*.26);
+        sctx.quadraticCurveTo(w*.58,h*.5,w*.72,h*.56);
+        sctx.quadraticCurveTo(w*.84,h*.6,w*.91,h*.71);
+        sctx.quadraticCurveTo(w*.76,h*.82,w*.42,h*.8);
+        sctx.quadraticCurveTo(w*.22,h*.79,w*.16,h*.72);
+        sctx.closePath();
+      }
+
+      if (shoe === 'slide') {
+        sctx.moveTo(w*.14,h*.61);
+        sctx.quadraticCurveTo(w*.44,h*.5,w*.9,h*.63);
+        sctx.quadraticCurveTo(w*.76,h*.75,w*.42,h*.75);
+        sctx.quadraticCurveTo(w*.19,h*.73,w*.14,h*.61);
+        sctx.closePath();
+      }
+
+      sctx.fill();
+      sctx.stroke();
+      sctx.restore();
+
+      sctx.save();
+      sctx.globalAlpha = .35;
+      sctx.strokeStyle = '#111';
+      sctx.lineWidth = 2;
+
+      for (let i = 0; i < 5; i++) {
+        sctx.beginPath();
+        sctx.moveTo(w*(.36+i*.055), h*.52);
+        sctx.lineTo(w*(.42+i*.055), h*.61);
+        sctx.stroke();
+      }
+
+      sctx.restore();
+    }
+
+    function pos(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return {
+        x: t.clientX - rect.left,
+        y: t.clientY - rect.top
+      };
+    }
+
+    function start(e) {
+      e.preventDefault();
+      drawing = true;
+      const p = pos(e);
+      dctx.beginPath();
+      dctx.moveTo(p.x, p.y);
+    }
+
+    function move(e) {
+      if (!drawing) return;
+      e.preventDefault();
+
+      const p = pos(e);
+
+      dctx.lineCap = 'round';
+      dctx.lineJoin = 'round';
+      dctx.lineWidth = size;
+      dctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+
+      if (tool === 'fade') {
+        dctx.globalAlpha = .22;
+      } else if (tool === 'highlight') {
+        dctx.globalAlpha = .55;
+        dctx.shadowColor = color;
+        dctx.shadowBlur = 16;
+      } else {
+        dctx.globalAlpha = 1;
+        dctx.shadowBlur = 0;
+      }
+
+      dctx.strokeStyle = color;
+      dctx.lineTo(p.x, p.y);
+      dctx.stroke();
+
+      dctx.shadowBlur = 0;
+      dctx.globalAlpha = 1;
+    }
+
+    function end() {
+      drawing = false;
+      dctx.closePath();
+    }
+
+    drawCanvas.addEventListener('mousedown', start);
+    drawCanvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+
+    drawCanvas.addEventListener('touchstart', start, { passive:false });
+    drawCanvas.addEventListener('touchmove', move, { passive:false });
+    window.addEventListener('touchend', end);
+
+    document.getElementById('shoeButtons').addEventListener('click', e => {
+      if (!e.target.dataset.shoe) return;
+
+      shoe = e.target.dataset.shoe;
+
+      [...e.currentTarget.querySelectorAll('button')].forEach(b => {
+        b.classList.toggle('active', b === e.target);
+      });
+
+      drawShoe();
+    });
+
+    document.querySelectorAll('[data-tool]').forEach(b => {
+      b.onclick = () => {
+        tool = b.dataset.tool;
+        document.querySelectorAll('[data-tool]').forEach(x => {
+          x.classList.toggle('active', x === b);
+        });
+      };
+    });
+
+    document.getElementById('colors').addEventListener('click', e => {
+      if (!e.target.dataset.color) return;
+
+      color = e.target.dataset.color;
+
+      document.querySelectorAll('.swatch').forEach(x => {
+        x.classList.toggle('active', x === e.target);
+      });
+    });
+
+    document.getElementById('size').addEventListener('input', e => {
+      size = Number(e.target.value);
+    });
+
+    document.getElementById('clear').onclick = () => {
+      dctx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
+    };
+
+    document.getElementById('blank').onclick = () => {
+      uploadedImage = null;
+      dctx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
+      drawShoe();
+    };
+
+    document.getElementById('demo').onclick = () => {
+      dctx.clearRect(0, 0, wrap.clientWidth, wrap.clientHeight);
+      dctx.lineCap = 'round';
+
+      const lines = [
+        ['#ff4b4b', .24, .58, .55, .5],
+        ['#6aa8ff', .35, .66, .82, .65],
+        ['#e8c95a', .42, .45, .62, .68]
+      ];
+
+      lines.forEach(a => {
+        dctx.beginPath();
+        dctx.strokeStyle = a[0];
+        dctx.lineWidth = 18;
+        dctx.moveTo(wrap.clientWidth*a[1], wrap.clientHeight*a[2]);
+        dctx.bezierCurveTo(
+          wrap.clientWidth*.45,
+          wrap.clientHeight*.35,
+          wrap.clientWidth*.62,
+          wrap.clientHeight*.8,
+          wrap.clientWidth*a[3],
+          wrap.clientHeight*a[4]
+        );
+        dctx.stroke();
+      });
+    };
+
+    document.getElementById('upload').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+
+      img.onload = () => {
+        uploadedImage = img;
+        drawShoe();
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+
+    document.getElementById('save').onclick = () => {
+      const out = document.createElement('canvas');
+      out.width = shoeCanvas.width;
+      out.height = shoeCanvas.height;
+
+      const octx = out.getContext('2d');
+      octx.drawImage(shoeCanvas, 0, 0);
+      octx.drawImage(drawCanvas, 0, 0);
+
+      const a = document.createElement('a');
+      a.download = 'shoelab-design.png';
+      a.href = out.toDataURL('image/png');
+      a.click();
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+  </script>
+</body>
+</html>

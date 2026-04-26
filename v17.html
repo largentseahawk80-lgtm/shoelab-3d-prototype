@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>ShoeLab AI Blank Canvas Studio V17</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#050706;color:#fff;font-family:Arial,system-ui,sans-serif;overflow:hidden}button,input{font:inherit}#app{height:100dvh;display:grid;grid-template-rows:68dvh 32dvh}.stage{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 15%,rgba(34,80,72,.65),rgba(5,7,6,1) 68%)}.hud{position:absolute;z-index:10;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}.glass{pointer-events:auto;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.045));border:1px solid rgba(255,255,255,.22);border-radius:22px;padding:10px 12px;box-shadow:0 20px 60px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.18);backdrop-filter:blur(18px) saturate(160%)}.kicker{font-size:10px;letter-spacing:.18em;color:#c7fff0;font-weight:900}.title{font-size:26px;font-weight:900;line-height:.95}.status{color:#8fffd4;font-size:12px;font-weight:900;margin-top:5px}.stageInner{position:absolute;inset:58px 12px 12px;display:grid;place-items:center}.canvasWrap{position:relative;width:min(96vw,1120px);height:100%;max-height:560px;display:grid;place-items:center}.canvas{max-width:100%;max-height:100%;border-radius:22px;filter:drop-shadow(0 30px 26px rgba(0,0,0,.48))}.zoneOverlay{position:absolute;inset:0;pointer-events:none}.uploadPanel{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:24px}.uploadPanel .box{max-width:520px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:26px;padding:22px;backdrop-filter:blur(18px)}#panel{overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.035));border-top:1px solid rgba(255,255,255,.17);padding:10px 12px calc(24px + env(safe-area-inset-bottom))}.wrap{max-width:1120px;margin:0 auto}.bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}.card{background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.045));border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:10px;margin-bottom:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.zones{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.btn{border:1px solid rgba(255,255,255,.23);background:rgba(255,255,255,.09);color:#fff;border-radius:14px;min-height:40px;padding:9px;font-weight:900;text-align:center}.btn.on{background:#fff;color:#06110e}.green{background:#34d399!important;color:#052015!important}.blue{background:#60a5fa!important;color:#04111f!important}.gold{background:#fbbf24!important;color:#111!important}.red{background:#7f1d1d!important;color:#fee2e2!important}.hint{font-size:12px;color:#cbd5e1;line-height:1.35}.textbox{width:100%;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.22);border-radius:12px;color:#fff;padding:10px;font-weight:900}.zoneChip{position:absolute;border:2px dashed rgba(103,232,249,.85);background:rgba(103,232,249,.08);border-radius:999px;color:#67e8f9;font-size:10px;font-weight:900;display:none;align-items:center;justify-content:center;text-shadow:0 2px 4px #000}.zoneChip.show{display:flex}@media(max-width:760px){#app{grid-template-rows:60dvh 40dvh}.bar,.grid,.zones{grid-template-columns:1fr 1fr}.title{font-size:22px}.stageInner{inset:54px 8px 8px}}</style>
+</head>
+<body>
+<div id="app">
+  <div class="stage">
+    <div class="hud">
+      <div class="glass"><div class="kicker">SHOELAB AI</div><div class="title">Blank Canvas Studio V17</div><div id="status" class="status">Sample real shoe loaded — upload any shoe to create a blank canvas</div></div>
+      <div class="glass"><button class="btn green" onclick="uploadInput.click()">UPLOAD SHOE</button></div>
+    </div>
+    <div class="stageInner">
+      <div class="canvasWrap" id="canvasWrap">
+        <canvas id="mainCanvas" class="canvas" width="1400" height="900"></canvas>
+        <div class="uploadPanel" id="emptyPanel"><div class="box"><h2>No shoe loaded</h2><p class="hint">Upload a shoe image or use the sample shoe, then tap AI CREATE BLANK CANVAS.</p><button class="btn green" onclick="uploadInput.click()">UPLOAD SHOE IMAGE</button><button class="btn blue" onclick="loadSample()">USE SAMPLE SHOE</button></div></div>
+        <div id="z_toe" class="zoneChip">TOE</div><div id="z_quarter" class="zoneChip">QUARTER</div><div id="z_heel" class="zoneChip">HEEL</div><div id="z_tongue" class="zoneChip">TONGUE</div><div id="z_midsole" class="zoneChip">MIDSOLE</div><div id="z_outsole" class="zoneChip">OUTSOLE</div>
+      </div>
+    </div>
+  </div>
+  <div id="panel"><div class="wrap">
+    <div class="bar"><button class="btn green" onclick="uploadInput.click()">UPLOAD SHOE</button><button class="btn gold" onclick="createBlankCanvas()">AI CREATE BLANK CANVAS</button><button class="btn blue" onclick="toggleOriginal()">ORIGINAL / BLANK</button><button class="btn blue" onclick="exportPNG()">EXPORT PNG</button></div>
+    <div class="card"><b>Phase 4 — AI Blank Canvas Workflow</b><p class="hint">Correct app direction: upload or use a real shoe image, then create a clean blank outlined canvas copy for designing. This replaces fake shoe-first logic.</p><input id="project" class="textbox" value="Signature Colorway 001"></div>
+    <div class="card"><b>Design zones</b><div id="zoneBtns" class="zones"></div><p class="hint">Active zone: <span id="activeZone">FULL</span>. These are overlay targets for the next phase: zone-locked painting.</p></div>
+    <div class="card"><b>Current tool path</b><div class="grid"><button class="btn on">IMAGE SOURCE</button><button class="btn">AI OUTLINE</button><button class="btn">ZONE MAP</button><button class="btn">DESIGN LAYERS NEXT</button></div></div>
+    <input id="uploadInput" type="file" accept="image/*" hidden />
+  </div></div>
+</div>
+<script>
+const DEFAULT_SHOE_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900"><rect width="1400" height="900" fill="#eef2f7"/><ellipse cx="710" cy="705" rx="510" ry="46" fill="#000" opacity=".16"/><path d="M178 570 C360 640 930 642 1198 540 L1245 617 C940 730 375 735 150 620 Z" fill="#d8dee7" stroke="#94a3b8" stroke-width="8"/><path d="M150 450 C205 240 370 150 560 132 C735 115 910 215 1018 282 C1120 345 1215 348 1265 445 C1200 505 920 515 658 505 C390 495 210 480 150 450 Z" fill="#fbfdff" stroke="#26313a" stroke-width="9"/><path d="M505 150 C685 112 805 170 990 305 C850 355 655 345 548 280 C510 230 492 185 505 150 Z" fill="#f1f5f9" stroke="#9ca3af" stroke-width="7"/><path d="M950 302 C1080 320 1210 365 1265 440 C1225 505 1060 515 900 487 C850 428 873 338 950 302 Z" fill="#fff" stroke="#94a3b8" stroke-width="7"/><path d="M160 448 C190 270 310 160 505 138 C452 260 445 365 460 500 C320 505 210 488 160 448 Z" fill="#f8fafc" stroke="#26313a" stroke-width="8"/><ellipse cx="345" cy="285" rx="150" ry="88" fill="#111827"/><path d="M500 188 L720 230 L668 386 L455 350 Z" fill="#e5e7eb" stroke="#6b7280" stroke-width="7"/><g stroke="#111827" stroke-width="15"><line x1="500" y1="225" x2="705" y2="275"/><line x1="480" y1="265" x2="688" y2="310"/><line x1="462" y1="305" x2="672" y2="348"/></g><path d="M720 340 C850 250 990 265 1115 342 C960 318 850 365 720 340 Z" fill="none" stroke="#111827" stroke-width="16"/></svg>`)} `;
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+let sourceImg = new Image();
+let sourceData = DEFAULT_SHOE_SVG;
+let blankMode = false;
+let activeZone = 'FULL';
+const zones = ['FULL','TOE BOX','QUARTER','HEEL','TONGUE','MIDSOLE','OUTSOLE'];
+function setStatus(t){status.textContent=t}
+function renderZoneBtns(){zoneBtns.innerHTML = zones.map(z=>`<button class="btn ${z===activeZone?'on':''}" onclick="setZone('${z}')">${z}</button>`).join('')}
+function setZone(z){activeZone=z;activeZone.textContent=z;document.getElementById('activeZone').textContent=z;renderZoneBtns();showZones(z);setStatus(z+' selected')}
+function showZones(z='FULL'){document.querySelectorAll('.zoneChip').forEach(e=>e.classList.remove('show')); if(z==='FULL') return; const map={'TOE BOX':'z_toe','QUARTER':'z_quarter','HEEL':'z_heel','TONGUE':'z_tongue','MIDSOLE':'z_midsole','OUTSOLE':'z_outsole'}; let el=document.getElementById(map[z]); if(el) el.classList.add('show')}
+function positionZones(){const r=canvas.getBoundingClientRect(), w=r.width, h=r.height; const set=(id,x,y,ww,hh)=>{let e=document.getElementById(id);e.style.left=x*w+'px';e.style.top=y*h+'px';e.style.width=ww*w+'px';e.style.height=hh*h+'px'};set('z_toe',.68,.34,.19,.16);set('z_quarter',.41,.23,.27,.18);set('z_heel',.14,.26,.22,.21);set('z_tongue',.35,.20,.17,.22);set('z_midsole',.16,.58,.70,.10);set('z_outsole',.15,.67,.72,.08)}
+function drawImageFit(img){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,canvas.width,canvas.height);let s=Math.min(canvas.width/img.width,canvas.height/img.height)*.94;let w=img.width*s,h=img.height*s,x=(canvas.width-w)/2,y=(canvas.height-h)/2;ctx.drawImage(img,x,y,w,h)}
+function drawOriginal(){blankMode=false;drawImageFit(sourceImg);setStatus('Original shoe image loaded')}
+function createBlankCanvas(){blankMode=true;drawImageFit(sourceImg);let imgData=ctx.getImageData(0,0,canvas.width,canvas.height);let d=imgData.data;for(let i=0;i<d.length;i+=4){let avg=(d[i]+d[i+1]+d[i+2])/3;let v=avg>235?250:avg>175?238:avg>90?218:72;d[i]=v;d[i+1]=v;d[i+2]=v;d[i+3]=255}ctx.putImageData(imgData,0,0);ctx.globalAlpha=.55;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.strokeStyle='#111827';ctx.lineWidth=8;ctx.strokeRect(70,80,canvas.width-140,canvas.height-160);showZones(activeZone);setStatus('AI blank canvas created — ready for zone design')}
+function toggleOriginal(){blankMode?drawOriginal():createBlankCanvas()}
+function loadSample(){sourceImg.onload=()=>{drawOriginal();emptyPanel.style.display='none';positionZones()};sourceImg.src=DEFAULT_SHOE_SVG;sourceData=DEFAULT_SHOE_SVG}
+uploadInput.onchange=e=>{let f=e.target.files[0]; if(!f)return; let r=new FileReader(); r.onload=ev=>{sourceData=ev.target.result;sourceImg.onload=()=>{drawOriginal();setStatus('Uploaded shoe loaded — tap AI CREATE BLANK CANVAS');emptyPanel.style.display='none';positionZones()};sourceImg.src=sourceData}; r.readAsDataURL(f)};
+function exportPNG(){let a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=(project.value||'shoelab')+(blankMode?'_blank_canvas':'_original')+'.png';a.click()}
+window.addEventListener('resize',positionZones);
+renderZoneBtns();loadSample();
+</script>
+</body>
+</html>

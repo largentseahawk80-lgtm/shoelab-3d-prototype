@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>ShoeLab 3D | Material Studio</title>
+    <title>ShoeLab 3D | Artist Suite V6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
       {
@@ -16,19 +16,20 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
         body { margin: 0; background: #121212; color: #fff; font-family: 'Roboto', sans-serif; overflow: hidden; }
-        #canvas-container { width: 100vw; height: 45vh; background: #121212; position: relative; }
+        #canvas-container { width: 100vw; height: 45vh; background: #121212; position: relative; touch-action: none; }
         .ui-panel { height: 55vh; overflow-y: auto; padding: 20px; background: #1e1e1e; border-top: 1px solid #333; }
         .section-title { font-size: 11px; font-weight: 700; color: #9aa0a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .btn-google { background: #8ab4f8; color: #202124; font-weight: 700; padding: 12px; border-radius: 8px; transition: opacity 0.2s; font-size: 13px; border: none; }
-        .btn-google:active { opacity: 0.8; }
-        .btn-outline { border: 1px solid #5f6368; color: #8ab4f8; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 13px; background: transparent; }
-        .color-swatch { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
-        .color-swatch:active { transform: scale(0.9); }
-        input[type=range] { width: 100%; accent-color: #8ab4f8; background: #3c4043; height: 4px; border-radius: 2px; appearance: none; margin-top: 8px; }
-        input[type=range]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; background: #8ab4f8; border-radius: 50%; }
+        .btn-action { font-weight: 900; padding: 14px; border-radius: 8px; font-size: 12px; border: none; width: 100%; transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-paint { background: #f28b82; color: #202124; margin-bottom: 10px; }
+        .btn-paint.active { border: 2px solid #fff; box-shadow: 0 0 15px rgba(242,139,130,0.4); background: #e67c73; color: white; }
+        .btn-decal { background: #81c995; color: #202124; margin-bottom: 10px; }
+        .btn-decal.active { border: 2px solid #fff; box-shadow: 0 0 15px rgba(129,201,149,0.4); background: #5bb974; color: white; }
+        .btn-outline { border: 1px solid #5f6368; color: #8ab4f8; background: transparent; }
         input[type="color"] { -webkit-appearance: none; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid #555; border-radius: 50%; }
+        input[type="range"] { width: 100%; accent-color: #8ab4f8; }
+        .crosshair-cursor { cursor: crosshair !important; }
     </style>
 </head>
 <body>
@@ -37,57 +38,78 @@
     <div class="ui-panel">
         <div class="max-w-md mx-auto space-y-6">
             <header class="border-b border-gray-700 pb-3">
-                <h1 class="text-xl font-bold text-gray-100">Material Studio Pro</h1>
-                <p class="text-xs text-gray-400">V5.0 - Custom 3D & Advanced Color</p>
+                <h1 class="text-xl font-bold text-gray-100">Artist Suite V6</h1>
+                <p class="text-xs text-gray-400">Testing Branch</p>
             </header>
 
-            <!-- 1. Model Base -->
-            <section class="bg-gray-800 p-4 rounded-xl">
-                <div class="section-title">1. Base Shoe Model</div>
-                <p class="text-[11px] text-gray-400 mb-3">Upload your own .GLB or .GLTF 3D shoe file.</p>
-                <div class="flex gap-2">
-                    <button onclick="document.getElementById('meshInput').click()" class="btn-outline flex-1">IMPORT 3D MODEL (.GLB)</button>
-                    <input type="file" id="meshInput" class="hidden" accept=".glb,.gltf">
-                </div>
-            </section>
-
-            <!-- 2. Art Mapping -->
-            <section class="bg-gray-800 p-4 rounded-xl">
-                <div class="section-title">2. Canvas Art Mapping</div>
-                <button onclick="document.getElementById('fileInput').click()" class="btn-google w-full mb-4">UPLOAD & WRAP 2D IMAGE</button>
-                <input type="file" id="fileInput" class="hidden" accept="image/*">
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300"><span>Scale</span><span id="scaleVal">1.0</span></div>
-                        <input type="range" id="tScale" min="0.1" max="5" step="0.1" value="1">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300"><span>Rotate</span><span id="rotVal">0°</span></div>
-                        <input type="range" id="tRot" min="0" max="360" step="1" value="0">
-                    </div>
-                </div>
-            </section>
-
-            <!-- 3. Google Material Palette -->
-            <section class="bg-gray-800 p-4 rounded-xl">
-                <div class="section-title flex justify-between items-center">
-                    <span>3. Material Design Palette</span>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <span class="text-[10px] text-blue-300 font-bold">CUSTOM HEX</span>
-                        <input type="color" id="nativeColorPicker" value="#8ab4f8">
+            <!-- Tool 4: Layer Management -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-purple-400">Tool 4: Layer Management</div>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerPaint" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW PAINT CANVAS</span>
                     </label>
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerDecal" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW DECALS & LOGOS</span>
+                    </label>
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerText" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW TYPOGRAPHY</span>
+                    </label>
+                    <button id="clearLayersBtn" class="btn-action btn-outline mt-2" style="color: #ef4444; border-color: #ef4444;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        CLEAR ALL LAYERS
+                    </button>
                 </div>
-                <div class="grid grid-cols-7 gap-2 mb-4" id="google-palette"></div>
-                
-                <div class="space-y-3 pt-2 border-t border-gray-700">
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300"><span>Material Roughness (Matte vs Glossy)</span></div>
-                        <input type="range" id="mRough" min="0" max="1" step="0.05" value="0.5">
+            </section>
+
+            <!-- Tool 1: Painting -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-red-400">Tool 1: Direct Canvas Painting</div>
+                <button id="togglePaintBtn" class="btn-action btn-paint">ACTIVATE BRUSH</button>
+                <div class="flex gap-4 mt-3">
+                    <div class="flex-1 bg-gray-900 p-2 rounded-lg">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1">COLOR</div>
+                        <input type="color" id="brushColor" value="#ea4335">
                     </div>
-                    <div>
-                        <div class="flex justify-between text-[10px] text-gray-300"><span>Metalness (Fabric vs Metallic)</span></div>
-                        <input type="range" id="mMetal" min="0" max="1" step="0.05" value="0.1">
+                    <div class="flex-2 bg-gray-900 p-2 rounded-lg w-full">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>SIZE</span><span id="brushSizeVal">10px</span></div>
+                        <input type="range" id="brushSize" min="1" max="40" step="1" value="10">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tool 2: Decal Placement -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-green-400">Tool 2: Decal & Logo Placement</div>
+                <button onclick="document.getElementById('decalInput').click()" class="btn-action btn-outline mb-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    UPLOAD PNG LOGO
+                </button>
+                <input type="file" id="decalInput" class="hidden" accept="image/png, image/jpeg">
+                
+                <button id="toggleDecalBtn" class="btn-action btn-decal opacity-50 pointer-events-none">ACTIVATE STAMPER</button>
+                <div class="bg-gray-900 p-2 rounded-lg mt-3">
+                    <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>DECAL SIZE</span><span id="decalSizeVal">2.0</span></div>
+                    <input type="range" id="decalSize" min="0.5" max="5" step="0.1" value="2.0">
+                </div>
+            </section>
+
+            <!-- Tool 3: Typography Engine -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-blue-400">Tool 3: Typography Engine</div>
+                <input type="text" id="textInput" placeholder="ENTER CUSTOM TEXT..." class="w-full bg-gray-900 text-white text-xs font-bold p-3 rounded-lg mb-3 border border-gray-700 focus:outline-none focus:border-blue-400">
+                <button id="toggleTextBtn" class="btn-action btn-outline" style="color: #60a5fa; border-color: #3b82f6;">ACTIVATE TEXT STAMPER</button>
+                <div class="flex gap-4 mt-3">
+                    <div class="flex-1 bg-gray-900 p-2 rounded-lg">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1">TEXT COLOR</div>
+                        <input type="color" id="textColor" value="#ffffff">
+                    </div>
+                    <div class="flex-2 bg-gray-900 p-2 rounded-lg w-full">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>SIZE</span><span id="textSizeVal">3.0</span></div>
+                        <input type="range" id="textSize" min="1" max="10" step="0.5" value="3.0">
                     </div>
                 </div>
             </section>
@@ -98,15 +120,33 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+        import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
-        let scene, camera, renderer, shoe, texture;
+        let scene, camera, renderer, shoe, controls;
+        let activeMode = null; // 'paint', 'decal', 'text', or null
+        let isDrawing = false;
         
-        // Official Google Material Design 500-level Colors
-        const materialColors = [
-            '#ffffff', '#202124', '#ea4335', '#fbbc04', '#34a853', '#4285f4', '#673ab7',
-            '#e91e63', '#9c27b0', '#3f51b5', '#03a9f4', '#00bcd4', '#009688', '#8bc34a',
-            '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722', '#795548', '#9e9e9e'
-        ];
+        // Paint variables
+        const drawCanvas = document.createElement('canvas');
+        drawCanvas.width = 1024;
+        drawCanvas.height = 1024;
+        const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 1024, 1024);
+        const canvasTexture = new THREE.CanvasTexture(drawCanvas);
+        canvasTexture.colorSpace = THREE.SRGBColorSpace;
+        
+        // Decal & Text variables
+        let decalTexture = null;
+        let decalMaterial = null;
+        const decalMeshes = [];
+        const textMeshes = [];
+        const position = new THREE.Vector3();
+        const orientation = new THREE.Euler();
+        const size = new THREE.Vector3(10, 10, 10);
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
         function init() {
             scene = new THREE.Scene();
@@ -118,160 +158,277 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            const container = document.getElementById('canvas-container');
+            container.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
             const sun = new THREE.DirectionalLight(0xffffff, 1.5);
             sun.position.set(5, 10, 5);
             scene.add(sun);
 
-            loadBaseModel('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/MaterialsVariantsShoe/glTF/MaterialsVariantsShoe.gltf', true);
-
-            const controls = new OrbitControls(camera, renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.minDistance = 0.5;
-            controls.maxDistance = 10;
 
-            setupEvents();
-            buildPalette();
-            animate();
-        }
-
-        function loadBaseModel(url, isDefault = false) {
-            if (shoe) scene.remove(shoe);
             const loader = new GLTFLoader();
-            loader.load(url, (gltf) => {
+            loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/MaterialsVariantsShoe/glTF/MaterialsVariantsShoe.gltf', (gltf) => {
                 shoe = gltf.scene;
-                if(isDefault) {
-                    shoe.scale.set(10, 10, 10);
-                    shoe.position.y = -0.5;
-                } else {
-                    // Center and scale custom model
-                    const box = new THREE.Box3().setFromObject(shoe);
-                    const size = box.getSize(new THREE.Vector3()).length();
-                    const center = box.getCenter(new THREE.Vector3());
-                    shoe.position.x += (shoe.position.x - center.x);
-                    shoe.position.y += (shoe.position.y - center.y);
-                    shoe.position.z += (shoe.position.z - center.z);
-                    const targetSize = 2.0;
-                    shoe.scale.setScalar(targetSize / size);
-                }
+                shoe.scale.set(10, 10, 10);
+                shoe.position.y = -0.5;
                 
-                // Ensure materials are ready for editing
                 shoe.traverse((node) => {
                     if (node.isMesh) {
                         node.material = new THREE.MeshStandardMaterial({
-                            color: node.material.color || 0xffffff,
-                            roughness: 0.5,
-                            metalness: 0.1,
+                            map: canvasTexture,
+                            roughness: 0.7,
                             side: THREE.DoubleSide
                         });
-                        if (texture) node.material.map = texture;
                     }
                 });
                 scene.add(shoe);
             });
+
+            setupEvents(container);
+            animate();
         }
 
-        function setupEvents() {
-            // 3D Model Upload
-            document.getElementById('meshInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const url = URL.createObjectURL(file);
-                    loadBaseModel(url);
-                }
+        function paint(uv) {
+            const color = document.getElementById('brushColor').value;
+            const bSize = parseInt(document.getElementById('brushSize').value);
+            const x = uv.x * drawCanvas.width;
+            const y = (1 - uv.y) * drawCanvas.height;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, bSize, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            canvasTexture.needsUpdate = true;
+        }
+
+        function placeDecal(intersect) {
+            if (!decalMaterial || !shoe) return;
+            
+            position.copy(intersect.point);
+            orientation.copy(shoe.rotation);
+            
+            const n = intersect.face.normal.clone();
+            n.transformDirection(intersect.object.matrixWorld);
+            n.add(intersect.point);
+            
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(position);
+            dummy.lookAt(n);
+            orientation.copy(dummy.rotation);
+            
+            const dSize = parseFloat(document.getElementById('decalSize').value);
+            size.set(dSize, dSize, dSize);
+
+            const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), decalMaterial);
+            m.renderOrder = decalMeshes.length + textMeshes.length;
+            scene.add(m);
+            decalMeshes.push(m);
+        }
+
+        function createTextTexture() {
+            const text = document.getElementById('textInput').value || "SHOELAB";
+            const color = document.getElementById('textColor').value;
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            context.fillStyle = color;
+            context.font = '900 140px Roboto, sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        function placeText(intersect) {
+            if (!shoe) return;
+            const tex = createTextTexture();
+            const textMaterial = new THREE.MeshStandardMaterial({
+                map: tex, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.5
             });
 
-            // 2D Image Upload
-            document.getElementById('fileInput').addEventListener('change', (e) => {
+            position.copy(intersect.point);
+            orientation.copy(shoe.rotation);
+            
+            const n = intersect.face.normal.clone();
+            n.transformDirection(intersect.object.matrixWorld);
+            n.add(intersect.point);
+            
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(position);
+            dummy.lookAt(n);
+            orientation.copy(dummy.rotation);
+            
+            const tSize = parseFloat(document.getElementById('textSize').value);
+            size.set(tSize, tSize / 4, tSize);
+
+            const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), textMaterial);
+            m.renderOrder = decalMeshes.length + textMeshes.length;
+            scene.add(m);
+            textMeshes.push(m);
+        }
+
+        function handlePointer(e, container, isClick = false) {
+            if (!activeMode || !shoe) return;
+            const rect = container.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const meshes = [];
+            shoe.traverse(n => { if (n.isMesh) meshes.push(n); });
+            const intersects = raycaster.intersectObjects(meshes, false);
+            
+            if (intersects.length > 0) {
+                if (activeMode === 'paint' && intersects[0].uv) {
+                    paint(intersects[0].uv);
+                } else if (activeMode === 'decal' && isClick) {
+                    placeDecal(intersects[0]);
+                } else if (activeMode === 'text' && isClick) {
+                    placeText(intersects[0]);
+                }
+            }
+        }
+
+        function setupEvents(container) {
+            const btnPaint = document.getElementById('togglePaintBtn');
+            const btnDecal = document.getElementById('toggleDecalBtn');
+            const btnText = document.getElementById('toggleTextBtn');
+
+            function resetButtons() {
+                btnPaint.className = "btn-action btn-paint";
+                btnPaint.innerText = "ACTIVATE BRUSH";
+                if (decalTexture) {
+                    btnDecal.className = "btn-action btn-decal";
+                    btnDecal.innerText = "ACTIVATE STAMPER";
+                } else {
+                    btnDecal.className = "btn-action btn-decal opacity-50 pointer-events-none";
+                }
+                btnText.className = "btn-action btn-outline";
+                btnText.style.background = "transparent";
+                btnText.style.color = "#60a5fa";
+                btnText.innerText = "ACTIVATE TEXT STAMPER";
+            }
+
+            btnPaint.onclick = () => {
+                activeMode = activeMode === 'paint' ? null : 'paint';
+                controls.enabled = activeMode === null;
+                resetButtons();
+                if (activeMode === 'paint') {
+                    btnPaint.className = "btn-action btn-paint active";
+                    btnPaint.innerText = "BRUSH ACTIVE (DRAW ON SHOE)";
+                }
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
+            };
+
+            btnDecal.onclick = () => {
+                if (!decalTexture) return;
+                activeMode = activeMode === 'decal' ? null : 'decal';
+                controls.enabled = activeMode === null;
+                resetButtons();
+                if (activeMode === 'decal') {
+                    btnDecal.className = "btn-action btn-decal active";
+                    btnDecal.innerText = "STAMPER ACTIVE (TAP SHOE)";
+                }
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
+            };
+
+            btnText.onclick = () => {
+                activeMode = activeMode === 'text' ? null : 'text';
+                controls.enabled = activeMode === null;
+                resetButtons();
+                if (activeMode === 'text') {
+                    btnText.className = "btn-action active";
+                    btnText.style.background = "#3b82f6";
+                    btnText.style.color = "#fff";
+                    btnText.style.borderColor = "#fff";
+                    btnText.style.boxShadow = "0 0 15px rgba(96,165,250,0.4)";
+                    btnText.innerText = "TEXT STAMPER ACTIVE (TAP SHOE)";
+                }
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
+            };
+
+            // Layer Management Tools
+            document.getElementById('layerPaint').onchange = (e) => {
+                shoe.traverse((node) => {
+                    if (node.isMesh) {
+                        node.material.map = e.target.checked ? canvasTexture : null;
+                        node.material.needsUpdate = true;
+                    }
+                });
+            };
+            document.getElementById('layerDecal').onchange = (e) => decalMeshes.forEach(m => m.visible = e.target.checked);
+            document.getElementById('layerText').onchange = (e) => textMeshes.forEach(m => m.visible = e.target.checked);
+            document.getElementById('clearLayersBtn').onclick = () => {
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1024, 1024); canvasTexture.needsUpdate = true;
+                decalMeshes.forEach(m => scene.remove(m)); decalMeshes.length = 0;
+                textMeshes.forEach(m => scene.remove(m)); textMeshes.length = 0;
+            };
+
+            // Decal Upload
+            document.getElementById('decalInput').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
                         new THREE.TextureLoader().load(ev.target.result, (tex) => {
                             tex.colorSpace = THREE.SRGBColorSpace;
-                            tex.flipY = false;
-                            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-                            texture = tex;
-                            applyTexture();
+                            decalTexture = tex;
+                            decalMaterial = new THREE.MeshStandardMaterial({
+                                map: decalTexture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.5
+                            });
+                            btnDecal.classList.remove('opacity-50', 'pointer-events-none');
+                            btnDecal.innerText = "ACTIVATE STAMPER";
                         });
                     };
                     reader.readAsDataURL(file);
                 }
             });
 
-            // Sliders
-            document.getElementById('tScale').oninput = (e) => {
-                document.getElementById('scaleVal').innerText = e.target.value;
-                if(texture) texture.repeat.set(e.target.value, e.target.value);
-            };
-            document.getElementById('tRot').oninput = (e) => {
-                document.getElementById('rotVal').innerText = e.target.value + '°';
-                if(texture) texture.rotation = (e.target.value * Math.PI) / 180;
-            };
-            document.getElementById('mRough').oninput = (e) => {
-                if(shoe) shoe.traverse(n => { if(n.isMesh) n.material.roughness = e.target.value; });
-            };
-            document.getElementById('mMetal').oninput = (e) => {
-                if(shoe) shoe.traverse(n => { if(n.isMesh) n.material.metalness = e.target.value; });
-            };
+            document.getElementById('brushSize').oninput = (e) => document.getElementById('brushSizeVal').innerText = e.target.value + 'px';
+            document.getElementById('decalSize').oninput = (e) => document.getElementById('decalSizeVal').innerText = e.target.value;
+            document.getElementById('textSize').oninput = (e) => document.getElementById('textSizeVal').innerText = e.target.value;
 
-            // Custom Color Picker
-            document.getElementById('nativeColorPicker').addEventListener('input', (e) => {
-                applyColor(e.target.value);
+            // Pointer events
+            container.addEventListener('pointerdown', (e) => {
+                if(activeMode === 'paint') { isDrawing = true; handlePointer(e, container); }
+                if(activeMode === 'decal' || activeMode === 'text') { handlePointer(e, container, true); }
             });
-        }
-
-        function applyTexture() {
-            if(!shoe || !texture) return;
-            shoe.traverse(n => {
-                if(n.isMesh) {
-                    n.material.map = texture;
-                    n.material.color.setHex(0xffffff);
-                    n.material.needsUpdate = true;
-                }
+            container.addEventListener('pointermove', (e) => {
+                if(isDrawing && activeMode === 'paint') handlePointer(e, container);
             });
-        }
-
-        function applyColor(hex) {
-            if(!shoe) return;
-            shoe.traverse(n => {
-                if(n.isMesh) {
-                    n.material.color.set(hex);
-                    n.material.map = null; // Clear image to show pure color
-                    n.material.needsUpdate = true;
-                }
-            });
-        }
-
-        function buildPalette() {
-            const container = document.getElementById('google-palette');
-            materialColors.forEach(hex => {
-                const btn = document.createElement('div');
-                btn.className = 'color-swatch';
-                btn.style.backgroundColor = hex;
-                if(hex === '#ffffff') btn.style.border = '1px solid #ccc';
-                btn.onclick = () => {
-                    applyColor(hex);
-                    document.getElementById('nativeColorPicker').value = hex;
-                };
-                container.appendChild(btn);
+            window.addEventListener('pointerup', () => { isDrawing = false; });
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / (window.innerHeight * 0.45);
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight * 0.45);
             });
         }
 
         function animate() {
             requestAnimationFrame(animate);
-           //  if(shoe) shoe.rotation.y += 0.002;
+            if (controls.enabled) controls.update();
             renderer.render(scene, camera);
         }
 
         init();
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / (window.innerHeight * 0.45);
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.45);
-        });
     </script>
 </body>
 </html>

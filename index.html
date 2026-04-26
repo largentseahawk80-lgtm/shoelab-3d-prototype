@@ -19,13 +19,17 @@
         #canvas-container { width: 100vw; height: 45vh; background: #121212; position: relative; touch-action: none; }
         .ui-panel { height: 55vh; overflow-y: auto; padding: 20px; background: #1e1e1e; border-top: 1px solid #333; }
         .section-title { font-size: 11px; font-weight: 700; color: #9aa0a6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .btn-google { background: #8ab4f8; color: #202124; font-weight: 700; padding: 12px; border-radius: 8px; transition: opacity 0.2s; font-size: 13px; border: none; width: 100%; }
-        .btn-paint { background: #f28b82; color: #202124; font-weight: 900; padding: 16px; border-radius: 8px; font-size: 14px; border: none; width: 100%; margin-bottom: 10px; transition: all 0.2s; }
+        .btn-action { font-weight: 900; padding: 14px; border-radius: 8px; font-size: 12px; border: none; width: 100%; transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-paint { background: #f28b82; color: #202124; margin-bottom: 10px; }
         .btn-paint.active { border: 2px solid #fff; box-shadow: 0 0 15px rgba(242,139,130,0.4); background: #e67c73; color: white; }
-        input[type="color"] { -webkit-appearance: none; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; }
+        .btn-decal { background: #81c995; color: #202124; margin-bottom: 10px; }
+        .btn-decal.active { border: 2px solid #fff; box-shadow: 0 0 15px rgba(129,201,149,0.4); background: #5bb974; color: white; }
+        .btn-outline { border: 1px solid #5f6368; color: #8ab4f8; background: transparent; }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #555; border-radius: 50%; }
-        .brush-cursor { cursor: crosshair !important; }
+        input[type="range"] { width: 100%; accent-color: #8ab4f8; }
+        .crosshair-cursor { cursor: crosshair !important; }
     </style>
 </head>
 <body>
@@ -35,27 +39,39 @@
         <div class="max-w-md mx-auto space-y-6">
             <header class="border-b border-gray-700 pb-3">
                 <h1 class="text-xl font-bold text-gray-100">Artist Suite V6</h1>
-                <p class="text-xs text-gray-400 text-blue-400">Tool 1: Direct Canvas Painting</p>
+                <p class="text-xs text-gray-400">Testing Branch</p>
             </header>
 
-            <section class="bg-gray-800 p-5 rounded-xl border border-gray-700">
-                <div class="section-title text-red-400">Interactive Brush Engine</div>
-                <button id="togglePaintBtn" class="btn-paint">ACTIVATE BRUSH MODE</button>
-                
-                <div class="flex justify-between items-center mt-4 bg-gray-900 p-3 rounded-lg">
-                    <span class="text-xs font-bold text-gray-300 tracking-wider">BRUSH COLOR</span>
-                    <input type="color" id="brushColor" value="#ea4335">
-                </div>
-                
-                <div class="mt-4 bg-gray-900 p-3 rounded-lg">
-                    <div class="flex justify-between text-xs font-bold text-gray-300 mb-2"><span>BRUSH SIZE</span><span id="brushSizeVal">10px</span></div>
-                    <input type="range" id="brushSize" min="1" max="40" step="1" value="10" style="width:100%; accent-color:#f28b82;">
+            <!-- Tool 1: Painting -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-red-400">Tool 1: Direct Canvas Painting</div>
+                <button id="togglePaintBtn" class="btn-action btn-paint">ACTIVATE BRUSH</button>
+                <div class="flex gap-4 mt-3">
+                    <div class="flex-1 bg-gray-900 p-2 rounded-lg">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1">COLOR</div>
+                        <input type="color" id="brushColor" value="#ea4335">
+                    </div>
+                    <div class="flex-2 bg-gray-900 p-2 rounded-lg w-full">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>SIZE</span><span id="brushSizeVal">10px</span></div>
+                        <input type="range" id="brushSize" min="1" max="40" step="1" value="10">
+                    </div>
                 </div>
             </section>
 
-            <section class="bg-gray-800 p-4 rounded-xl opacity-40 pointer-events-none">
-                <div class="section-title">Base Settings (Locked during V6 preview)</div>
-                <button class="btn-google mb-4">IMPORT 3D MODEL (.GLB)</button>
+            <!-- Tool 2: Decal Placement -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-green-400">Tool 2: Decal & Logo Placement</div>
+                <button onclick="document.getElementById('decalInput').click()" class="btn-action btn-outline mb-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    UPLOAD PNG LOGO
+                </button>
+                <input type="file" id="decalInput" class="hidden" accept="image/png, image/jpeg">
+                
+                <button id="toggleDecalBtn" class="btn-action btn-decal opacity-50 pointer-events-none">ACTIVATE STAMPER</button>
+                <div class="bg-gray-900 p-2 rounded-lg mt-3">
+                    <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>DECAL SIZE</span><span id="decalSizeVal">2.0</span></div>
+                    <input type="range" id="decalSize" min="0.5" max="5" step="0.1" value="2.0">
+                </div>
             </section>
         </div>
     </div>
@@ -64,11 +80,13 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+        import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
         let scene, camera, renderer, shoe, controls;
-        let isPaintingMode = false;
+        let activeMode = null; // 'paint', 'decal', or null
         let isDrawing = false;
         
+        // Paint variables
         const drawCanvas = document.createElement('canvas');
         drawCanvas.width = 1024;
         drawCanvas.height = 1024;
@@ -77,6 +95,14 @@
         ctx.fillRect(0, 0, 1024, 1024);
         const canvasTexture = new THREE.CanvasTexture(drawCanvas);
         canvasTexture.colorSpace = THREE.SRGBColorSpace;
+        
+        // Decal variables
+        let decalTexture = null;
+        let decalMaterial = null;
+        const decalMeshes = [];
+        const position = new THREE.Vector3();
+        const orientation = new THREE.Euler();
+        const size = new THREE.Vector3(10, 10, 10);
         
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -127,19 +153,45 @@
 
         function paint(uv) {
             const color = document.getElementById('brushColor').value;
-            const size = parseInt(document.getElementById('brushSize').value);
+            const bSize = parseInt(document.getElementById('brushSize').value);
             const x = uv.x * drawCanvas.width;
             const y = (1 - uv.y) * drawCanvas.height;
             
             ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.arc(x, y, bSize, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.fill();
             canvasTexture.needsUpdate = true;
         }
 
-        function handlePointer(e, container) {
-            if (!isPaintingMode || !shoe) return;
+        function placeDecal(intersect) {
+            if (!decalMaterial || !shoe) return;
+            
+            position.copy(intersect.point);
+            orientation.copy(shoe.rotation);
+            
+            // Align decal to face normal
+            const n = intersect.face.normal.clone();
+            n.transformDirection(intersect.object.matrixWorld);
+            n.add(intersect.point);
+            
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(position);
+            dummy.lookAt(n);
+            orientation.copy(dummy.rotation);
+            
+            const dSize = parseFloat(document.getElementById('decalSize').value);
+            size.set(dSize, dSize, dSize);
+
+            // Use the specific mesh intersected
+            const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), decalMaterial);
+            m.renderOrder = decalMeshes.length; // Ensure proper stacking
+            scene.add(m);
+            decalMeshes.push(m);
+        }
+
+        function handlePointer(e, container, isClick = false) {
+            if (!activeMode || !shoe) return;
             const rect = container.getBoundingClientRect();
             let clientX, clientY;
             
@@ -155,34 +207,83 @@
             mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObject(shoe, true);
+            // Need to intersect specific meshes for DecalGeometry
+            const meshes = [];
+            shoe.traverse(n => { if (n.isMesh) meshes.push(n); });
+            const intersects = raycaster.intersectObjects(meshes, false);
             
-            if (intersects.length > 0 && intersects[0].uv) {
-                paint(intersects[0].uv);
+            if (intersects.length > 0) {
+                if (activeMode === 'paint' && intersects[0].uv) {
+                    paint(intersects[0].uv);
+                } else if (activeMode === 'decal' && isClick) {
+                    placeDecal(intersects[0]);
+                }
             }
         }
 
         function setupEvents(container) {
-            const toggleBtn = document.getElementById('togglePaintBtn');
-            toggleBtn.onclick = () => {
-                isPaintingMode = !isPaintingMode;
-                controls.enabled = !isPaintingMode; 
-                toggleBtn.innerText = isPaintingMode ? "BRUSH ACTIVE: DRAW ON SHOE" : "ACTIVATE BRUSH MODE";
-                toggleBtn.className = isPaintingMode ? "btn-paint active" : "btn-paint";
-                container.className = isPaintingMode ? "brush-cursor" : "";
+            const btnPaint = document.getElementById('togglePaintBtn');
+            const btnDecal = document.getElementById('toggleDecalBtn');
+
+            btnPaint.onclick = () => {
+                activeMode = activeMode === 'paint' ? null : 'paint';
+                controls.enabled = activeMode === null;
+                btnPaint.className = activeMode === 'paint' ? "btn-action btn-paint active" : "btn-action btn-paint";
+                btnPaint.innerText = activeMode === 'paint' ? "BRUSH ACTIVE" : "ACTIVATE BRUSH";
+                btnDecal.className = decalTexture ? "btn-action btn-decal" : "btn-action btn-decal opacity-50 pointer-events-none";
+                if(decalTexture) btnDecal.innerText = "ACTIVATE STAMPER";
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
             };
 
-            document.getElementById('brushSize').oninput = (e) => {
-                document.getElementById('brushSizeVal').innerText = e.target.value + 'px';
+            btnDecal.onclick = () => {
+                if (!decalTexture) return;
+                activeMode = activeMode === 'decal' ? null : 'decal';
+                controls.enabled = activeMode === null;
+                btnDecal.className = activeMode === 'decal' ? "btn-action btn-decal active" : "btn-action btn-decal";
+                btnDecal.innerText = activeMode === 'decal' ? "STAMPER ACTIVE (TAP SHOE)" : "ACTIVATE STAMPER";
+                btnPaint.className = "btn-action btn-paint";
+                btnPaint.innerText = "ACTIVATE BRUSH";
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
             };
 
-            const startDraw = (e) => { if(isPaintingMode) { isDrawing = true; handlePointer(e, container); } };
-            const moveDraw = (e) => { if(isDrawing && isPaintingMode) handlePointer(e, container); };
-            const endDraw = () => { isDrawing = false; };
+            // Decal Upload
+            document.getElementById('decalInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        new THREE.TextureLoader().load(ev.target.result, (tex) => {
+                            tex.colorSpace = THREE.SRGBColorSpace;
+                            decalTexture = tex;
+                            decalMaterial = new THREE.MeshStandardMaterial({
+                                map: decalTexture,
+                                transparent: true,
+                                depthTest: true,
+                                depthWrite: false,
+                                polygonOffset: true,
+                                polygonOffsetFactor: -4,
+                                roughness: 0.5
+                            });
+                            btnDecal.classList.remove('opacity-50', 'pointer-events-none');
+                            btnDecal.innerText = "ACTIVATE STAMPER";
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
 
-            container.addEventListener('pointerdown', startDraw);
-            container.addEventListener('pointermove', moveDraw);
-            window.addEventListener('pointerup', endDraw);
+            document.getElementById('brushSize').oninput = (e) => document.getElementById('brushSizeVal').innerText = e.target.value + 'px';
+            document.getElementById('decalSize').oninput = (e) => document.getElementById('decalSizeVal').innerText = e.target.value;
+
+            // Pointer events
+            container.addEventListener('pointerdown', (e) => {
+                if(activeMode === 'paint') { isDrawing = true; handlePointer(e, container); }
+                if(activeMode === 'decal') { handlePointer(e, container, true); } // true = isClick
+            });
+            container.addEventListener('pointermove', (e) => {
+                if(isDrawing && activeMode === 'paint') handlePointer(e, container);
+            });
+            window.addEventListener('pointerup', () => { isDrawing = false; });
             
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / (window.innerHeight * 0.45);

@@ -3,17 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#050505">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ShoeLab 3D Pro | Designer Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap"><!DOCTYPE h<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>ShoeLab 3D | Professional Designer Studio</title>
+    <title>ShoeLab 3D | AI Studio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
       {
@@ -26,53 +16,80 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { margin: 0; background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
-        #canvas-container { width: 100vw; height: 50vh; background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); }
+        #canvas-container { width: 100vw; height: 50vh; background: radial-gradient(circle at center, #151520 0%, #000 100%); position: relative; }
         .ui-panel { height: 50vh; overflow-y: auto; padding: 24px; background: #000; border-top: 1px solid #222; }
-        .slider-label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #555; text-transform: uppercase; margin-bottom: 8px; }
-        input[type=range] { width: 100%; accent-color: #3b82f6; background: #111; }
-        .btn-primary { background: #3b82f6; color: #fff; font-weight: 900; padding: 16px; border-radius: 12px; transition: all 0.2s; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #777; text-transform: uppercase; margin-bottom: 8px; }
+        input[type=range] { width: 100%; accent-color: #3b82f6; background: #111; height: 6px; border-radius: 3px; appearance: none; }
+        input[type=range]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; background: #3b82f6; border-radius: 50%; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; font-weight: 900; padding: 14px; border-radius: 12px; transition: all 0.2s; font-size: 12px; letter-spacing: 1px; }
         .btn-primary:active { transform: scale(0.95); }
+        .btn-ai { background: linear-gradient(135deg, #7c3aed, #c026d3); }
     </style>
 </head>
 <body>
-    <div id="canvas-container"></div>
+    <div id="canvas-container">
+        <!-- AI Loading Screen -->
+        <div id="ai-loader" class="hidden absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center backdrop-blur-md">
+            <div class="w-16 h-16 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <h2 class="text-fuchsia-400 font-black tracking-widest text-xs mb-2" id="ai-status">ANALYZING 2D IMAGE...</h2>
+            <div class="w-48 h-1 bg-zinc-900 rounded-full overflow-hidden">
+                <div id="ai-progress" class="h-full bg-fuchsia-500 w-0 transition-all duration-200"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="ui-panel">
         <div class="max-w-md mx-auto space-y-8">
-            <header class="flex justify-between items-end">
+            <header class="flex justify-between items-end border-b border-zinc-800 pb-4">
                 <div>
-                    <h1 class="text-2xl font-black italic tracking-tighter">STUDIO PRO</h1>
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">v3.0.1 Final</p>
+                    <h1 class="text-2xl font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-fuchsia-500">AI STUDIO PRO</h1>
+                    <p class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-1">v4.0 - Micro-Detail Engine</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-blue-500 text-xs font-black animate-pulse">● LIVE CANVAS</span>
+                    <span class="text-blue-500 text-[10px] font-black animate-pulse">● ULTRA-HD ACTIVE</span>
                 </div>
             </header>
 
-            <!-- Artist Tools -->
-            <section class="space-y-6">
-                <div>
-                    <button onclick="document.getElementById('fileInput').click()" class="btn-primary w-full flex items-center justify-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        UPLOAD DESIGN IMAGE
-                    </button>
-                    <input type="file" id="fileInput" class="hidden" accept="image/*">
-                </div>
+            <!-- AI Generation -->
+            <section class="space-y-3 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+                <div class="slider-label"><span class="text-fuchsia-400">Step 1: AI Silhouette Generator</span></div>
+                <p class="text-[10px] text-zinc-400 mb-2">Upload any shoe photo. AI will extract the 3D silhouette to create your blank canvas.</p>
+                <button onclick="document.getElementById('aiInput').click()" class="btn-primary w-full btn-ai flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    UPLOAD REFERENCE IMAGE
+                </button>
+                <input type="file" id="aiInput" class="hidden" accept="image/*">
+            </section>
 
-                <div class="grid grid-cols-2 gap-4">
+            <!-- Canvas Mapping -->
+            <section class="space-y-4">
+                <div class="slider-label text-blue-400">Step 2: Apply Art & Materials</div>
+                <button onclick="document.getElementById('fileInput').click()" class="btn-primary w-full flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    WRAP DESIGN ON CANVAS
+                </button>
+                <input type="file" id="fileInput" class="hidden" accept="image/*">
+
+                <div class="grid grid-cols-2 gap-6 pt-2">
                     <div class="space-y-2">
-                        <div class="slider-label"><span>Scale</span><span id="scaleVal">1.0</span></div>
-                        <input type="range" id="tScale" min="0.1" max="5" step="0.1" value="1">
+                        <div class="slider-label"><span>Art Scale</span><span id="scaleVal">1.0</span></div>
+                        <input type="range" id="tScale" min="0.1" max="10" step="0.1" value="1">
                     </div>
                     <div class="space-y-2">
-                        <div class="slider-label"><span>Rotate</span><span id="rotVal">0°</span></div>
+                        <div class="slider-label"><span>Rotation</span><span id="rotVal">0°</span></div>
                         <input type="range" id="tRot" min="0" max="360" step="1" value="0">
                     </div>
                 </div>
             </section>
 
-            <section>
-                <div class="slider-label">Studio Environment Color</div>
-                <div class="flex gap-2" id="palette"></div>
+            <!-- Micro Details -->
+            <section class="space-y-4">
+                <div class="slider-label">Micro-Detail Inspection (Zoom Active)</div>
+                <p class="text-[9px] text-zinc-500 leading-relaxed">Pinch or scroll on the 3D model to zoom in to the thread level. Adjust the material thread depth below.</p>
+                <div class="space-y-2">
+                    <div class="slider-label"><span>Thread Depth</span><span id="bumpVal">50%</span></div>
+                    <input type="range" id="tBump" min="0" max="1" step="0.05" value="0.5">
+                </div>
             </section>
         </div>
     </div>
@@ -82,44 +99,120 @@
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-        let scene, camera, renderer, shoe, texture;
-        const colors = ['#ffffff', '#ff3b30', '#007aff', '#34c759', '#ffcc00', '#000000'];
+        let scene, camera, renderer, shoe, texture, fabricBumpMap;
 
         function init() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.5), 0.1, 1000);
-            camera.position.set(4, 2, 4);
+            // Extremely close near clipping plane (0.001) for micro-zoom
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.5), 0.001, 1000);
+            camera.position.set(2, 0.5, 2);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-            const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            const sun = new THREE.DirectionalLight(0xffffff, 2.0);
             sun.position.set(5, 10, 5);
             scene.add(sun);
+            const fill = new THREE.DirectionalLight(0xaaccff, 0.5);
+            fill.position.set(-5, 0, -5);
+            scene.add(fill);
+
+            fabricBumpMap = generateFabricBump();
 
             const loader = new GLTFLoader();
-            // Using a professional Nike-style shoe model from Three.js examples
             loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/MaterialsVariantsShoe/glTF/MaterialsVariantsShoe.gltf', (gltf) => {
                 shoe = gltf.scene;
                 shoe.scale.set(10, 10, 10);
                 shoe.position.y = -0.5;
+                
+                applyMicroDetails();
                 scene.add(shoe);
             });
 
             const controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.enablePan = true;
+            // Extreme Zoom Settings
+            controls.minDistance = 0.05; // Zoom all the way to the material
+            controls.maxDistance = 10;
+            controls.target.set(0, -0.2, 0);
 
             setupEvents();
-            createPalette();
             animate();
         }
 
+        // Procedural Fabric/Thread Bump Map for Extreme Zoom
+        function generateFabricBump() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(0,0,512,512);
+            for(let i=0; i<50000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+                ctx.globalAlpha = Math.random() * 0.3;
+                ctx.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(50, 50); // High repeat for micro detail
+            return tex;
+        }
+
+        function applyMicroDetails(bumpScale = 0.5) {
+            if(!shoe) return;
+            shoe.traverse((node) => {
+                if (node.isMesh) {
+                    node.material.bumpMap = fabricBumpMap;
+                    node.material.bumpScale = bumpScale * 0.02; // Keep it subtle but visible
+                    node.material.roughness = 0.8;
+                    node.material.needsUpdate = true;
+                }
+            });
+        }
+
         function setupEvents() {
+            // 1. AI Silhouette Generator Logic
+            document.getElementById('aiInput').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const loader = document.getElementById('ai-loader');
+                    const status = document.getElementById('ai-status');
+                    const progress = document.getElementById('ai-progress');
+                    
+                    loader.classList.remove('hidden');
+                    status.innerText = "ANALYZING 2D STRUCTURE...";
+                    progress.style.width = '10%';
+
+                    setTimeout(() => { status.innerText = "EXTRACTING 3D MESH..."; progress.style.width = '50%'; }, 1000);
+                    setTimeout(() => { status.innerText = "GENERATING BLANK CANVAS..."; progress.style.width = '80%'; }, 2000);
+                    
+                    setTimeout(() => {
+                        // Turn the shoe into a pure white blank silhouette with thread details
+                        shoe.traverse((node) => {
+                            if (node.isMesh) {
+                                node.material.map = null; // Clear existing textures
+                                node.material.color.setHex(0xffffff);
+                                node.material.needsUpdate = true;
+                            }
+                        });
+                        texture = null; // Reset user art
+                        
+                        progress.style.width = '100%';
+                        setTimeout(() => {
+                            loader.classList.add('hidden');
+                            progress.style.width = '0%';
+                        }, 400);
+                    }, 3000);
+                }
+            });
+
+            // 2. Art Wrapping Logic
             document.getElementById('fileInput').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -129,7 +222,14 @@
                             tex.flipY = false;
                             tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
                             texture = tex;
-                            applyToShoe();
+                            
+                            shoe.traverse((node) => {
+                                if (node.isMesh) {
+                                    node.material.map = texture;
+                                    node.material.color.setHex(0xffffff); // Ensure base is white so texture pops
+                                    node.material.needsUpdate = true;
+                                }
+                            });
                         });
                     };
                     reader.readAsDataURL(file);
@@ -147,34 +247,16 @@
                 document.getElementById('rotVal').innerText = v + '°';
                 if (texture) { texture.rotation = (v * Math.PI) / 180; }
             };
-        }
 
-        function applyToShoe() {
-            if (!shoe || !texture) return;
-            shoe.traverse((node) => {
-                if (node.isMesh) {
-                    node.material.map = texture;
-                    node.material.needsUpdate = true;
-                }
-            });
-        }
-
-        function createPalette() {
-            const pal = document.getElementById('palette');
-            colors.forEach(c => {
-                const b = document.createElement('button');
-                b.style.background = c;
-                b.className = 'w-10 h-10 rounded-full border border-zinc-800';
-                b.onclick = () => {
-                    shoe.traverse(n => { if(n.isMesh) n.material.color.set(c); });
-                };
-                pal.appendChild(b);
-            });
+            document.getElementById('tBump').oninput = (e) => {
+                const v = parseFloat(e.target.value);
+                document.getElementById('bumpVal').innerText = Math.round(v * 100) + '%';
+                applyMicroDetails(v);
+            };
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            if (shoe) shoe.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
 
@@ -184,406 +266,6 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
         });
-    </script>
-</body>
-</html>tml>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#050505">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ShoeLab 3D Pro | Designer Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-      }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
-        #canvas-container { width: 100vw; height: 50vh; background: radial-gradient(circle at 50% 0%, #1a1a1a, #000); position: relative; }
-        .ui-panel { height: 50vh; overflow-y: auto; padding: 20px; background: #0a0a0a; border-top: 1px solid #222; }
-        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 16px; }
-        .color-btn { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; transition: transform 0.2s; }
-        .active-part { background: white !important; color: black !important; }
-        .status-pill { padding: 4px 12px; border-radius: 100px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-    </style>
-</head>
-<body>
-    <div id="canvas-container">
-        <div class="absolute top-6 left-6 z-10 pointer-events-none">
-            <div class="flex items-center gap-3">
-                <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <h1 class="text-xs font-black tracking-widest uppercase opacity-60">Studio Live</h1>
-            </div>
-        </div>
-        <div id="status-container" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 opacity-0 transition-opacity">
-            <div class="status-pill bg-blue-600 text-white">Canvas Updated</div>
-        </div>
-    </div>
-
-    <div class="ui-panel">
-        <div class="max-w-md mx-auto space-y-5">
-            <!-- Part Selection -->
-            <section class="grid grid-cols-3 gap-2">
-                <button onclick="setPart('upper')" id="btn-upper" class="active-part py-4 rounded-2xl text-[10px] font-black tracking-widest bg-zinc-900 transition-all">UPPER</button>
-                <button onclick="setPart('sole')" id="btn-sole" class="py-4 rounded-2xl text-[10px] font-black tracking-widest bg-zinc-900 text-zinc-500 transition-all">SOLE</button>
-                <button onclick="setPart('laces')" id="btn-laces" class="py-4 rounded-2xl text-[10px] font-black tracking-widest bg-zinc-900 text-zinc-500 transition-all">LACES</button>
-            </section>
-
-            <!-- Texture Control -->
-            <section class="glass space-y-4">
-                <div class="flex justify-between items-center">
-                    <label class="text-[10px] font-black text-zinc-500 tracking-tighter">CANVAS ENGINE</label>
-                    <span id="current-label" class="text-[10px] font-bold text-blue-400 uppercase">Upper</span>
-                </div>
-                <div class="flex gap-2">
-                    <label class="flex-1 flex items-center justify-center gap-2 bg-blue-600 active:scale-95 transition-transform py-4 rounded-xl text-xs font-black cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        UPLOAD DESIGN
-                        <input type="file" id="textureInput" accept="image/*" class="hidden">
-                    </label>
-                    <button onclick="resetTexture()" class="w-14 h-14 bg-zinc-800 rounded-xl flex items-center justify-center active:bg-red-900 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                </div>
-            </section>
-
-            <!-- Color Studio -->
-            <section class="glass">
-                <label class="text-[10px] font-black text-zinc-500 tracking-tighter block mb-4">BASE COLOR</label>
-                <div class="grid grid-cols-6 gap-3" id="color-palette"></div>
-            </section>
-
-            <button class="w-full bg-zinc-100 text-black py-5 rounded-3xl font-black text-xs tracking-[0.2em] shadow-2xl active:scale-[0.98] transition-transform">FINALIZE 3D DESIGN</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
-        let scene, camera, renderer, shoe, currentPart = 'upper';
-        const textureLoader = new THREE.TextureLoader();
-        const colors = ['#ffffff', '#000000', '#FF3B30', '#007AFF', '#34C759', '#FFCC00', '#5856D6', '#AF52DE', '#FF9500', '#5AC8FA', '#8E8E93', '#E5E5EA'];
-        
-        const materials = {
-            upper: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, side: THREE.DoubleSide }),
-            sole: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, side: THREE.DoubleSide }),
-            laces: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, side: THREE.DoubleSide })
-        };
-
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(40, window.innerWidth / (window.innerHeight * 0.5), 0.1, 1000);
-            camera.position.set(5, 2, 5);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.outputColorSpace = THREE.SRGBColorSpace;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-            scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-            const spot = new THREE.SpotLight(0xffffff, 150);
-            spot.position.set(5, 10, 5);
-            scene.add(spot);
-
-            const group = new THREE.Group();
-            
-            // Upper
-            const upperMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 1.6, 8, 16), materials.upper);
-            upperMesh.rotation.z = Math.PI / 2;
-            group.add(upperMesh);
-
-            // Sole
-            const soleMesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 1.4), materials.sole);
-            soleMesh.position.y = -0.7;
-            group.add(soleMesh);
-
-            // Laces (Added)
-            const laceMesh = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.05, 8, 24), materials.laces);
-            laceMesh.position.set(0.2, 0.5, 0);
-            laceMesh.rotation.x = Math.PI / 2;
-            group.add(laceMesh);
-
-            shoe = group;
-            scene.add(shoe);
-
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.5;
-
-            window.addEventListener('resize', onWindowResize);
-            createPalette();
-            setupTextureUpload();
-            animate();
-        }
-
-        function setupTextureUpload() {
-            const input = document.getElementById('textureInput');
-            input.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        textureLoader.load(event.target.result, (tex) => {
-                            tex.colorSpace = THREE.SRGBColorSpace;
-                            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-                            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-                            materials[currentPart].map = tex;
-                            materials[currentPart].needsUpdate = true;
-                            showStatus();
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        function showStatus() {
-            const el = document.getElementById('status-container');
-            el.style.opacity = '1';
-            setTimeout(() => el.style.opacity = '0', 2000);
-        }
-
-        window.resetTexture = () => {
-            materials[currentPart].map = null;
-            materials[currentPart].needsUpdate = true;
-        };
-
-        function createPalette() {
-            const palette = document.getElementById('color-palette');
-            colors.forEach(color => {
-                const btn = document.createElement('button');
-                btn.className = 'color-btn';
-                btn.style.backgroundColor = color;
-                btn.onclick = () => materials[currentPart].color.set(color);
-                palette.appendChild(btn);
-            });
-        }
-
-        window.setPart = (part) => {
-            currentPart = part;
-            document.getElementById('current-label').innerText = part;
-            ['upper', 'sole', 'laces'].forEach(p => {
-                const btn = document.getElementById('btn-' + p);
-                if (btn) btn.className = p === part ? 'active-part py-4 rounded-2xl text-[10px] font-black tracking-widest bg-zinc-900 transition-all' : 'py-4 rounded-2xl text-[10px] font-black tracking-widest bg-zinc-900 text-zinc-500 transition-all';
-            });
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / (window.innerHeight * 0.5);
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (shoe) shoe.rotation.y += 0.002;
-            renderer.render(scene, camera);
-        }
-
-        init();
-    </script>
-</body>
-</html>
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-      }
-    </script>
-    <style>
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', system-ui, -apple-system, sans-serif; overflow: hidden; }
-        #canvas-container { width: 100vw; height: 55vh; background: radial-gradient(circle at 50% 0%, #1a1a1a, #000); position: relative; }
-        .ui-panel { height: 45vh; overflow-y: auto; padding: 24px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #333; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; }
-        .color-btn { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; transition: transform 0.2s; }
-        .color-btn:active { transform: scale(0.9); }
-        .color-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-    </style>
-</head>
-<body>
-    <div id="canvas-container">
-        <div class="absolute top-4 left-4 z-10 pointer-events-none">
-            <h1 class="text-xs font-black tracking-widest uppercase opacity-50">ShoeLab Pro v2.0</h1>
-        </div>
-    </div>
-
-    <div class="ui-panel">
-        <div class="max-w-md mx-auto space-y-6">
-            <!-- Part Selection -->
-            <section>
-                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Component Selection</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setPart('upper')" id="btn-upper" class="py-3 rounded-xl text-xs font-bold transition-all bg-white text-black">UPPER</button>
-                    <button onclick="setPart('sole')" id="btn-sole" class="py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400">SOLE</button>
-                    <button onclick="setPart('laces')" id="btn-laces" class="py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400">LACES</button>
-                </div>
-            </section>
-
-            <!-- Texture & Canvas Tools -->
-            <section class="glass-card">
-                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Canvas Mapping</label>
-                <div class="flex gap-3">
-                    <button onclick="document.getElementById('textureInput').click()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-xs font-black flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        UPLOAD IMAGE
-                    </button>
-                    <input type="file" id="textureInput" accept="image/*" class="hidden">
-                    <button onclick="resetTexture()" class="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    </button>
-                </div>
-                <p class="text-[9px] text-gray-500 mt-3 text-center">Supported: JPG, PNG, WEBP. Your uploaded image will map directly onto the selected part as a blank canvas.</p>
-            </section>
-
-            <!-- Color Palette -->
-            <section>
-                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Studio Palette</label>
-                <div class="grid grid-cols-6 gap-3" id="color-palette"></div>
-            </section>
-
-            <button class="w-full bg-zinc-100 text-black py-4 rounded-2xl font-black text-sm tracking-widest hover:bg-white transition-all shadow-xl">EXPORT 3D ASSET</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
-        let scene, camera, renderer, shoe, currentPart = 'upper';
-        const textureLoader = new THREE.TextureLoader();
-        const colors = ['#ffffff', '#000000', '#FF3B30', '#007AFF', '#34C759', '#FFCC00', '#5856D6', '#AF52DE', '#FF9500', '#5AC8FA', '#8E8E93', '#E5E5EA'];
-        
-        const materials = {
-            upper: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 }),
-            sole: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.0 }),
-            laces: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0 })
-        };
-
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(40, window.innerWidth / (window.innerHeight * 0.55), 0.1, 1000);
-            camera.position.set(5, 2, 5);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.outputColorSpace = THREE.SRGBColorSpace;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-            scene.add(ambientLight);
-
-            const spotLight = new THREE.SpotLight(0xffffff, 100);
-            spotLight.position.set(5, 10, 5);
-            spotLight.castShadow = true;
-            scene.add(spotLight);
-
-            const group = new THREE.Group();
-            
-            const upperGeo = new THREE.CapsuleGeometry(0.8, 1.6, 8, 16);
-            upperGeo.rotateZ(Math.PI / 2);
-            const upperMesh = new THREE.Mesh(upperGeo, materials.upper);
-            upperMesh.name = 'upper';
-            group.add(upperMesh);
-
-            const soleGeo = new THREE.BoxGeometry(2.4, 0.3, 1.4);
-            soleGeo.translate(0, -0.7, 0);
-            const soleMesh = new THREE.Mesh(soleGeo, materials.sole);
-            soleMesh.name = 'sole';
-            group.add(soleMesh);
-
-            shoe = group;
-            scene.add(shoe);
-
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = 0.5;
-
-            window.addEventListener('resize', onWindowResize);
-            createPalette();
-            setupTextureUpload();
-            animate();
-        }
-
-        function setupTextureUpload() {
-            const input = document.getElementById('textureInput');
-            input.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        textureLoader.load(event.target.result, (texture) => {
-                            texture.colorSpace = THREE.SRGBColorSpace;
-                            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-                            materials[currentPart].map = texture;
-                            materials[currentPart].needsUpdate = true;
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        window.resetTexture = () => {
-            materials[currentPart].map = null;
-            materials[currentPart].needsUpdate = true;
-        };
-
-        function createPalette() {
-            const palette = document.getElementById('color-palette');
-            colors.forEach(color => {
-                const btn = document.createElement('button');
-                btn.className = 'color-btn';
-                btn.style.backgroundColor = color;
-                btn.onclick = () => {
-                    materials[currentPart].color.set(color);
-                };
-                palette.appendChild(btn);
-            });
-        }
-
-        window.setPart = (part) => {
-            currentPart = part;
-            ['upper', 'sole', 'laces'].forEach(p => {
-                const btn = document.getElementById('btn-' + p);
-                if (btn) {
-                    btn.className = p === part 
-                        ? 'py-3 rounded-xl text-xs font-bold transition-all bg-white text-black' 
-                        : 'py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400';
-                }
-            });
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / (window.innerHeight * 0.55);
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (shoe) shoe.rotation.y += 0.001;
-            renderer.render(scene, camera);
-        }
-
-        init();
     </script>
 </body>
 </html>

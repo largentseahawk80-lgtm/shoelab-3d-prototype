@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050505">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ShoeLab 3D Pro</title>
+    <title>ShoeLab 3D Pro | Designer Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
       {
@@ -17,29 +17,59 @@
       }
     </script>
     <style>
-        body { margin: 0; background: #050505; color: white; font-family: system-ui, sans-serif; overflow: hidden; }
-        #canvas-container { width: 100vw; height: 60vh; background: radial-gradient(circle at top, #333, #050505); }
-        .ui-panel { height: 40vh; overflow-y: auto; padding: 20px; background: #111; border-top: 1px solid #333; }
-        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
-        .color-btn { width: 100%; height: 40px; border-radius: 8px; border: 2px solid transparent; }
-        .color-btn.active { border-color: white; }
+        body { margin: 0; background: #000; color: white; font-family: 'Inter', system-ui, -apple-system, sans-serif; overflow: hidden; }
+        #canvas-container { width: 100vw; height: 55vh; background: radial-gradient(circle at 50% 0%, #1a1a1a, #000); position: relative; }
+        .ui-panel { height: 45vh; overflow-y: auto; padding: 24px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #333; }
+        .glass-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px; }
+        .color-btn { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; transition: transform 0.2s; }
+        .color-btn:active { transform: scale(0.9); }
+        .color-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
-    <div id="canvas-container"></div>
-    <div class="ui-panel">
-        <h2 class="text-xl font-bold mb-4">ShoeLab Pro Designer</h2>
-        <div class="mb-6">
-            <p class="text-sm text-gray-400 mb-2">Select Component</p>
-            <div class="flex gap-2">
-                <button onclick="setPart('upper')" id="btn-upper" class="bg-white text-black px-4 py-2 rounded-full text-sm font-bold">Upper</button>
-                <button onclick="setPart('sole')" id="btn-sole" class="bg-gray-800 text-white px-4 py-2 rounded-full text-sm">Sole</button>
-                <button onclick="setPart('laces')" id="btn-laces" class="bg-gray-800 text-white px-4 py-2 rounded-full text-sm">Laces</button>
-            </div>
+    <div id="canvas-container">
+        <div class="absolute top-4 left-4 z-10 pointer-events-none">
+            <h1 class="text-xs font-black tracking-widest uppercase opacity-50">ShoeLab Pro v2.0</h1>
         </div>
-        <div>
-            <p class="text-sm text-gray-400 mb-2">Color Palette</p>
-            <div class="color-grid" id="color-palette"></div>
+    </div>
+
+    <div class="ui-panel">
+        <div class="max-w-md mx-auto space-y-6">
+            <!-- Part Selection -->
+            <section>
+                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Component Selection</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setPart('upper')" id="btn-upper" class="py-3 rounded-xl text-xs font-bold transition-all bg-white text-black">UPPER</button>
+                    <button onclick="setPart('sole')" id="btn-sole" class="py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400">SOLE</button>
+                    <button onclick="setPart('laces')" id="btn-laces" class="py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400">LACES</button>
+                </div>
+            </section>
+
+            <!-- Texture & Canvas Tools -->
+            <section class="glass-card">
+                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Canvas Mapping</label>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('textureInput').click()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-xs font-black flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        UPLOAD IMAGE
+                    </button>
+                    <input type="file" id="textureInput" accept="image/*" class="hidden">
+                    <button onclick="resetTexture()" class="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+                <p class="text-[9px] text-gray-500 mt-3 text-center">Supported: JPG, PNG, WEBP. Your uploaded image will map directly onto the selected part as a blank canvas.</p>
+            </section>
+
+            <!-- Color Palette -->
+            <section>
+                <label class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 block">Studio Palette</label>
+                <div class="grid grid-cols-6 gap-3" id="color-palette"></div>
+            </section>
+
+            <button class="w-full bg-zinc-100 text-black py-4 rounded-2xl font-black text-sm tracking-widest hover:bg-white transition-all shadow-xl">EXPORT 3D ASSET</button>
         </div>
     </div>
 
@@ -48,44 +78,86 @@
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
         let scene, camera, renderer, shoe, currentPart = 'upper';
-        const colors = ['#ffffff', '#1a1a1a', '#ff3b30', '#007aff', '#4cd964', '#ffcc00', '#5856d6', '#ff9500'];
-        const parts = {
-            upper: { color: '#ffffff' },
-            sole: { color: '#1a1a1a' },
-            laces: { color: '#ffffff' }
+        const textureLoader = new THREE.TextureLoader();
+        const colors = ['#ffffff', '#000000', '#FF3B30', '#007AFF', '#34C759', '#FFCC00', '#5856D6', '#AF52DE', '#FF9500', '#5AC8FA', '#8E8E93', '#E5E5EA'];
+        
+        const materials = {
+            upper: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 }),
+            sole: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.0 }),
+            laces: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0 })
         };
 
         function init() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
-            camera.position.set(4, 2, 4);
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / (window.innerHeight * 0.55), 0.1, 1000);
+            camera.position.set(5, 2, 5);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            // Updated for Three.js r160+ (SRGBColorSpace replaces sRGBEncoding)
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
             scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-            dirLight.position.set(5, 5, 5);
-            scene.add(dirLight);
 
-            const geometry = new THREE.CapsuleGeometry(0.8, 1.5, 4, 8);
-            geometry.rotateZ(Math.PI / 2);
-            const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-            shoe = new THREE.Mesh(geometry, material);
+            const spotLight = new THREE.SpotLight(0xffffff, 100);
+            spotLight.position.set(5, 10, 5);
+            spotLight.castShadow = true;
+            scene.add(spotLight);
+
+            const group = new THREE.Group();
+            
+            const upperGeo = new THREE.CapsuleGeometry(0.8, 1.6, 8, 16);
+            upperGeo.rotateZ(Math.PI / 2);
+            const upperMesh = new THREE.Mesh(upperGeo, materials.upper);
+            upperMesh.name = 'upper';
+            group.add(upperMesh);
+
+            const soleGeo = new THREE.BoxGeometry(2.4, 0.3, 1.4);
+            soleGeo.translate(0, -0.7, 0);
+            const soleMesh = new THREE.Mesh(soleGeo, materials.sole);
+            soleMesh.name = 'sole';
+            group.add(soleMesh);
+
+            shoe = group;
             scene.add(shoe);
 
             const controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
 
             window.addEventListener('resize', onWindowResize);
             createPalette();
+            setupTextureUpload();
             animate();
         }
+
+        function setupTextureUpload() {
+            const input = document.getElementById('textureInput');
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        textureLoader.load(event.target.result, (texture) => {
+                            texture.colorSpace = THREE.SRGBColorSpace;
+                            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                            materials[currentPart].map = texture;
+                            materials[currentPart].needsUpdate = true;
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        window.resetTexture = () => {
+            materials[currentPart].map = null;
+            materials[currentPart].needsUpdate = true;
+        };
 
         function createPalette() {
             const palette = document.getElementById('color-palette');
@@ -94,8 +166,7 @@
                 btn.className = 'color-btn';
                 btn.style.backgroundColor = color;
                 btn.onclick = () => {
-                    parts[currentPart].color = color;
-                    shoe.material.color.set(color);
+                    materials[currentPart].color.set(color);
                 };
                 palette.appendChild(btn);
             });
@@ -105,20 +176,23 @@
             currentPart = part;
             ['upper', 'sole', 'laces'].forEach(p => {
                 const btn = document.getElementById('btn-' + p);
-                btn.className = p === part ? 'bg-white text-black px-4 py-2 rounded-full text-sm font-bold' : 'bg-gray-800 text-white px-4 py-2 rounded-full text-sm';
+                if (btn) {
+                    btn.className = p === part 
+                        ? 'py-3 rounded-xl text-xs font-bold transition-all bg-white text-black' 
+                        : 'py-3 rounded-xl text-xs font-bold transition-all bg-zinc-800 text-zinc-400';
+                }
             });
-            shoe.material.color.set(parts[part].color);
-        };
+        }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / (window.innerHeight * 0.6);
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.55);
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            if (shoe) shoe.rotation.y += 0.005;
+            if (shoe) shoe.rotation.y += 0.001;
             renderer.render(scene, camera);
         }
 

@@ -42,6 +42,29 @@
                 <p class="text-xs text-gray-400">Testing Branch</p>
             </header>
 
+            <!-- Tool 4: Layer Management -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-purple-400">Tool 4: Layer Management</div>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerPaint" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW PAINT CANVAS</span>
+                    </label>
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerDecal" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW DECALS & LOGOS</span>
+                    </label>
+                    <label class="flex items-center gap-3 bg-gray-900 p-3 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="layerText" checked class="w-4 h-4 accent-purple-500">
+                        <span class="text-xs font-bold text-gray-300">SHOW TYPOGRAPHY</span>
+                    </label>
+                    <button id="clearLayersBtn" class="btn-action btn-outline mt-2" style="color: #ef4444; border-color: #ef4444;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        CLEAR ALL LAYERS
+                    </button>
+                </div>
+            </section>
+
             <!-- Tool 1: Painting -->
             <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
                 <div class="section-title text-red-400">Tool 1: Direct Canvas Painting</div>
@@ -117,6 +140,7 @@
         let decalTexture = null;
         let decalMaterial = null;
         const decalMeshes = [];
+        const textMeshes = [];
         const position = new THREE.Vector3();
         const orientation = new THREE.Euler();
         const size = new THREE.Vector3(10, 10, 10);
@@ -200,7 +224,7 @@
             size.set(dSize, dSize, dSize);
 
             const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), decalMaterial);
-            m.renderOrder = decalMeshes.length;
+            m.renderOrder = decalMeshes.length + textMeshes.length;
             scene.add(m);
             decalMeshes.push(m);
         }
@@ -210,7 +234,7 @@
             const color = document.getElementById('textColor').value;
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
-            canvas.height = 256; // 4:1 aspect ratio
+            canvas.height = 256;
             const context = canvas.getContext('2d');
             context.fillStyle = color;
             context.font = '900 140px Roboto, sans-serif';
@@ -242,12 +266,12 @@
             orientation.copy(dummy.rotation);
             
             const tSize = parseFloat(document.getElementById('textSize').value);
-            size.set(tSize, tSize / 4, tSize); // Maintain 4:1 aspect ratio
+            size.set(tSize, tSize / 4, tSize);
 
             const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), textMaterial);
-            m.renderOrder = decalMeshes.length;
+            m.renderOrder = decalMeshes.length + textMeshes.length;
             scene.add(m);
-            decalMeshes.push(m);
+            textMeshes.push(m);
         }
 
         function handlePointer(e, container, isClick = false) {
@@ -290,14 +314,12 @@
             function resetButtons() {
                 btnPaint.className = "btn-action btn-paint";
                 btnPaint.innerText = "ACTIVATE BRUSH";
-                
                 if (decalTexture) {
                     btnDecal.className = "btn-action btn-decal";
                     btnDecal.innerText = "ACTIVATE STAMPER";
                 } else {
                     btnDecal.className = "btn-action btn-decal opacity-50 pointer-events-none";
                 }
-
                 btnText.className = "btn-action btn-outline";
                 btnText.style.background = "transparent";
                 btnText.style.color = "#60a5fa";
@@ -340,6 +362,23 @@
                     btnText.innerText = "TEXT STAMPER ACTIVE (TAP SHOE)";
                 }
                 container.className = activeMode !== null ? "crosshair-cursor" : "";
+            };
+
+            // Layer Management Tools
+            document.getElementById('layerPaint').onchange = (e) => {
+                shoe.traverse((node) => {
+                    if (node.isMesh) {
+                        node.material.map = e.target.checked ? canvasTexture : null;
+                        node.material.needsUpdate = true;
+                    }
+                });
+            };
+            document.getElementById('layerDecal').onchange = (e) => decalMeshes.forEach(m => m.visible = e.target.checked);
+            document.getElementById('layerText').onchange = (e) => textMeshes.forEach(m => m.visible = e.target.checked);
+            document.getElementById('clearLayersBtn').onclick = () => {
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1024, 1024); canvasTexture.needsUpdate = true;
+                decalMeshes.forEach(m => scene.remove(m)); decalMeshes.length = 0;
+                textMeshes.forEach(m => scene.remove(m)); textMeshes.length = 0;
             };
 
             // Decal Upload

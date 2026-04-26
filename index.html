@@ -73,6 +73,23 @@
                     <input type="range" id="decalSize" min="0.5" max="5" step="0.1" value="2.0">
                 </div>
             </section>
+
+            <!-- Tool 3: Typography Engine -->
+            <section class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div class="section-title text-blue-400">Tool 3: Typography Engine</div>
+                <input type="text" id="textInput" placeholder="ENTER CUSTOM TEXT..." class="w-full bg-gray-900 text-white text-xs font-bold p-3 rounded-lg mb-3 border border-gray-700 focus:outline-none focus:border-blue-400">
+                <button id="toggleTextBtn" class="btn-action btn-outline" style="color: #60a5fa; border-color: #3b82f6;">ACTIVATE TEXT STAMPER</button>
+                <div class="flex gap-4 mt-3">
+                    <div class="flex-1 bg-gray-900 p-2 rounded-lg">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1">TEXT COLOR</div>
+                        <input type="color" id="textColor" value="#ffffff">
+                    </div>
+                    <div class="flex-2 bg-gray-900 p-2 rounded-lg w-full">
+                        <div class="text-[10px] font-bold text-gray-400 mb-1 flex justify-between"><span>SIZE</span><span id="textSizeVal">3.0</span></div>
+                        <input type="range" id="textSize" min="1" max="10" step="0.5" value="3.0">
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -83,7 +100,7 @@
         import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
         let scene, camera, renderer, shoe, controls;
-        let activeMode = null; // 'paint', 'decal', or null
+        let activeMode = null; // 'paint', 'decal', 'text', or null
         let isDrawing = false;
         
         // Paint variables
@@ -96,7 +113,7 @@
         const canvasTexture = new THREE.CanvasTexture(drawCanvas);
         canvasTexture.colorSpace = THREE.SRGBColorSpace;
         
-        // Decal variables
+        // Decal & Text variables
         let decalTexture = null;
         let decalMaterial = null;
         const decalMeshes = [];
@@ -170,7 +187,6 @@
             position.copy(intersect.point);
             orientation.copy(shoe.rotation);
             
-            // Align decal to face normal
             const n = intersect.face.normal.clone();
             n.transformDirection(intersect.object.matrixWorld);
             n.add(intersect.point);
@@ -183,9 +199,53 @@
             const dSize = parseFloat(document.getElementById('decalSize').value);
             size.set(dSize, dSize, dSize);
 
-            // Use the specific mesh intersected
             const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), decalMaterial);
-            m.renderOrder = decalMeshes.length; // Ensure proper stacking
+            m.renderOrder = decalMeshes.length;
+            scene.add(m);
+            decalMeshes.push(m);
+        }
+
+        function createTextTexture() {
+            const text = document.getElementById('textInput').value || "SHOELAB";
+            const color = document.getElementById('textColor').value;
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 256; // 4:1 aspect ratio
+            const context = canvas.getContext('2d');
+            context.fillStyle = color;
+            context.font = '900 140px Roboto, sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        function placeText(intersect) {
+            if (!shoe) return;
+            const tex = createTextTexture();
+            const textMaterial = new THREE.MeshStandardMaterial({
+                map: tex, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.5
+            });
+
+            position.copy(intersect.point);
+            orientation.copy(shoe.rotation);
+            
+            const n = intersect.face.normal.clone();
+            n.transformDirection(intersect.object.matrixWorld);
+            n.add(intersect.point);
+            
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(position);
+            dummy.lookAt(n);
+            orientation.copy(dummy.rotation);
+            
+            const tSize = parseFloat(document.getElementById('textSize').value);
+            size.set(tSize, tSize / 4, tSize); // Maintain 4:1 aspect ratio
+
+            const m = new THREE.Mesh(new DecalGeometry(intersect.object, position, orientation, size), textMaterial);
+            m.renderOrder = decalMeshes.length;
             scene.add(m);
             decalMeshes.push(m);
         }
@@ -207,7 +267,6 @@
             mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            // Need to intersect specific meshes for DecalGeometry
             const meshes = [];
             shoe.traverse(n => { if (n.isMesh) meshes.push(n); });
             const intersects = raycaster.intersectObjects(meshes, false);
@@ -217,6 +276,8 @@
                     paint(intersects[0].uv);
                 } else if (activeMode === 'decal' && isClick) {
                     placeDecal(intersects[0]);
+                } else if (activeMode === 'text' && isClick) {
+                    placeText(intersects[0]);
                 }
             }
         }
@@ -224,14 +285,33 @@
         function setupEvents(container) {
             const btnPaint = document.getElementById('togglePaintBtn');
             const btnDecal = document.getElementById('toggleDecalBtn');
+            const btnText = document.getElementById('toggleTextBtn');
+
+            function resetButtons() {
+                btnPaint.className = "btn-action btn-paint";
+                btnPaint.innerText = "ACTIVATE BRUSH";
+                
+                if (decalTexture) {
+                    btnDecal.className = "btn-action btn-decal";
+                    btnDecal.innerText = "ACTIVATE STAMPER";
+                } else {
+                    btnDecal.className = "btn-action btn-decal opacity-50 pointer-events-none";
+                }
+
+                btnText.className = "btn-action btn-outline";
+                btnText.style.background = "transparent";
+                btnText.style.color = "#60a5fa";
+                btnText.innerText = "ACTIVATE TEXT STAMPER";
+            }
 
             btnPaint.onclick = () => {
                 activeMode = activeMode === 'paint' ? null : 'paint';
                 controls.enabled = activeMode === null;
-                btnPaint.className = activeMode === 'paint' ? "btn-action btn-paint active" : "btn-action btn-paint";
-                btnPaint.innerText = activeMode === 'paint' ? "BRUSH ACTIVE" : "ACTIVATE BRUSH";
-                btnDecal.className = decalTexture ? "btn-action btn-decal" : "btn-action btn-decal opacity-50 pointer-events-none";
-                if(decalTexture) btnDecal.innerText = "ACTIVATE STAMPER";
+                resetButtons();
+                if (activeMode === 'paint') {
+                    btnPaint.className = "btn-action btn-paint active";
+                    btnPaint.innerText = "BRUSH ACTIVE (DRAW ON SHOE)";
+                }
                 container.className = activeMode !== null ? "crosshair-cursor" : "";
             };
 
@@ -239,10 +319,26 @@
                 if (!decalTexture) return;
                 activeMode = activeMode === 'decal' ? null : 'decal';
                 controls.enabled = activeMode === null;
-                btnDecal.className = activeMode === 'decal' ? "btn-action btn-decal active" : "btn-action btn-decal";
-                btnDecal.innerText = activeMode === 'decal' ? "STAMPER ACTIVE (TAP SHOE)" : "ACTIVATE STAMPER";
-                btnPaint.className = "btn-action btn-paint";
-                btnPaint.innerText = "ACTIVATE BRUSH";
+                resetButtons();
+                if (activeMode === 'decal') {
+                    btnDecal.className = "btn-action btn-decal active";
+                    btnDecal.innerText = "STAMPER ACTIVE (TAP SHOE)";
+                }
+                container.className = activeMode !== null ? "crosshair-cursor" : "";
+            };
+
+            btnText.onclick = () => {
+                activeMode = activeMode === 'text' ? null : 'text';
+                controls.enabled = activeMode === null;
+                resetButtons();
+                if (activeMode === 'text') {
+                    btnText.className = "btn-action active";
+                    btnText.style.background = "#3b82f6";
+                    btnText.style.color = "#fff";
+                    btnText.style.borderColor = "#fff";
+                    btnText.style.boxShadow = "0 0 15px rgba(96,165,250,0.4)";
+                    btnText.innerText = "TEXT STAMPER ACTIVE (TAP SHOE)";
+                }
                 container.className = activeMode !== null ? "crosshair-cursor" : "";
             };
 
@@ -256,13 +352,7 @@
                             tex.colorSpace = THREE.SRGBColorSpace;
                             decalTexture = tex;
                             decalMaterial = new THREE.MeshStandardMaterial({
-                                map: decalTexture,
-                                transparent: true,
-                                depthTest: true,
-                                depthWrite: false,
-                                polygonOffset: true,
-                                polygonOffsetFactor: -4,
-                                roughness: 0.5
+                                map: decalTexture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.5
                             });
                             btnDecal.classList.remove('opacity-50', 'pointer-events-none');
                             btnDecal.innerText = "ACTIVATE STAMPER";
@@ -274,11 +364,12 @@
 
             document.getElementById('brushSize').oninput = (e) => document.getElementById('brushSizeVal').innerText = e.target.value + 'px';
             document.getElementById('decalSize').oninput = (e) => document.getElementById('decalSizeVal').innerText = e.target.value;
+            document.getElementById('textSize').oninput = (e) => document.getElementById('textSizeVal').innerText = e.target.value;
 
             // Pointer events
             container.addEventListener('pointerdown', (e) => {
                 if(activeMode === 'paint') { isDrawing = true; handlePointer(e, container); }
-                if(activeMode === 'decal') { handlePointer(e, container, true); } // true = isClick
+                if(activeMode === 'decal' || activeMode === 'text') { handlePointer(e, container, true); }
             });
             container.addEventListener('pointermove', (e) => {
                 if(isDrawing && activeMode === 'paint') handlePointer(e, container);

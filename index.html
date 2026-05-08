@@ -1,17 +1,2955 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#070816" />
-    <meta
-      name="description"
-      content="ShoeLab 3D Prototype — custom sneaker design studio with lace, material, color, and build summary controls."
-    />
-    <title>ShoeLab 3D Prototype</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="LaceLayer" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="description" content="Turn any shoe photo into an editable design canvas." />
+
+<title>LaceLayer Studio</title>
+
+<!-- PWA manifest, embedded inline so it works from a single file -->
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{
+  "name": "LaceLayer Studio",
+  "short_name": "LaceLayer",
+  "description": "Turn any shoe photo into an editable design canvas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "%230a0a0a",
+  "theme_color": "%230a0a0a",
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  },
+  "icons": [
+    { "src": "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect width=%22192%22 height=%22192%22 rx=%2842%22 fill=%22%230a0a0a%22/><text x=%2296%22 y=%22138%22 font-size=%22120%22 text-anchor=%22middle%22>👟</text></svg>", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%230a0a0a%22/><text x=%22256%22 y=%22368%22 font-size=%22320%22 text-anchor=%22middle%22>👟</text></svg>", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}' />
+
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%230a0a0a'/><text x='96' y='138' font-size='120' text-anchor='middle'>👟</text></svg>" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%; width: 100%;
+    overflow: hidden;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  #app {
+    display: flex; flex-direction: column;
+    height: 100dvh; width: 100vw;
+    background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
+  }
+
+  /* ===== Top bar ===== */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(20,20,20,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  .brand {
+    font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+    background: linear-gradient(135deg, #ff6b35 0%, #ffb347 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .brand-sub { font-size: 10px; color: #888; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #f5f5f5;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.1); }
+  .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.95); }
+
+  /* ===== Recent captures strip ===== */
+  .recents {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: rgba(15,15,15,0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex-shrink: 0;
+    min-height: 72px;
+  }
+  .recents::-webkit-scrollbar { display: none; }
+  .recents.empty { display: none; }
+  .recent-thumb {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    background: #222 center/cover no-repeat;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.08);
+    position: relative;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .recent-thumb:hover { transform: translateY(-2px); }
+  .recent-thumb.active { border-color: #ff8c42; box-shadow: 0 0 0 2px rgba(255,140,66,0.3); }
+  .recent-thumb .x {
+    position: absolute; top: -6px; right: -6px;
+    width: 18px; height: 18px;
+    background: #000; color: #fff;
+    border-radius: 50%; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.2);
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .recent-thumb:hover .x { opacity: 1; }
+  .recent-add {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    background: rgba(255,107,53,0.1);
+    border: 2px dashed rgba(255,107,53,0.4);
+    color: #ff8c42;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  .recent-add:hover { background: rgba(255,107,53,0.2); }
+
+  /* ===== Canvas area ===== */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(255,107,53,0.04) 0%, transparent 50%),
+      repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 24px 24px;
+  }
+  #canvas {
+    display: block;
+    width: 100%; height: 100%;
+    touch-action: none;
+    cursor: grab;
+  }
+  #canvas.grabbing { cursor: grabbing; }
+  #canvas.draw-mode { cursor: crosshair; }
+  #canvas.lasso-mode { cursor: crosshair; }
+
+  /* ===== Empty state — capture options ===== */
+  .empty {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .empty-icon {
+    width: 80px; height: 80px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,179,71,0.05));
+    border: 1px solid rgba(255,107,53,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px;
+    margin-bottom: 18px;
+  }
+  .empty-title { font-size: 22px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .empty-sub { font-size: 13px; color: #888; max-width: 360px; line-height: 1.5; margin-bottom: 20px; }
+
+  .capture-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 380px;
+  }
+  .capture-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, border-color 0.15s;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+  }
+  .capture-card:hover { background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.4); transform: translateY(-2px); }
+  .capture-card:active { transform: scale(0.98); }
+  .capture-card.primary {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 8px 24px rgba(255,107,53,0.3);
+  }
+  .capture-card.primary:hover { background: linear-gradient(135deg, #ff7a45 0%, #ff9c52 100%); }
+  .capture-icon { font-size: 24px; margin-bottom: 6px; display: block; }
+  .capture-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .capture-desc { font-size: 11px; opacity: 0.7; line-height: 1.3; }
+
+  .url-input-wrap {
+    width: 100%; max-width: 380px;
+    margin-top: 14px;
+    display: flex; gap: 8px;
+  }
+  .url-input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #f5f5f5;
+    font-size: 13px;
+    font-family: inherit;
+    -webkit-user-select: text; user-select: text;
+  }
+  .url-input::placeholder { color: #666; }
+  .url-input:focus { outline: none; border-color: #ff8c42; }
+  .url-go {
+    background: #ff6b35; color: white;
+    border: none; border-radius: 10px;
+    padding: 0 16px;
+    font-weight: 600; font-size: 13px;
+    cursor: pointer;
+  }
+  .url-go:hover { background: #ff7a45; }
+
+  .empty-tip {
+    margin-top: 20px;
+    font-size: 11px; color: #666;
+    max-width: 380px; line-height: 1.5;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .empty-tip b { color: #ff8c42; }
+
+  /* ===== Floating zoom indicator ===== */
+  .zoom-pill {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(12px);
+    color: #f5f5f5;
+    padding: 6px 12px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.1);
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .zoom-pill.visible { opacity: 1; }
+
+  /* ===== Bottom toolbar ===== */
+  .toolbar {
+    display: flex;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    justify-content: center;
+  }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .tool {
+    flex-shrink: 0;
+    min-width: 60px; min-height: 56px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: #999;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 10px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tool .ic { font-size: 22px; line-height: 1; }
+  .tool:hover { background: rgba(255,255,255,0.04); color: #f5f5f5; }
+  .tool:active { background: rgba(255,255,255,0.08); }
+  .tool.active { color: #ff8c42; background: rgba(255,107,53,0.12); }
+  .tool.disabled { opacity: 0.35; pointer-events: none; }
+
+  /* ===== Sliding panel ===== */
+  .panel-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 50;
+  }
+  .panel-overlay.open { opacity: 1; pointer-events: auto; }
+  .panel {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: #1a1a1a;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    z-index: 51;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (min-width: 768px) {
+    .panel {
+      max-width: 440px;
+      left: auto; right: 16px; bottom: 90px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-height: 75vh;
+      transform: translateX(500px);
+    }
+    .panel.open { transform: translateX(0) !important; }
+  }
+  .panel.open { transform: translateY(0); }
+  .panel-handle {
+    width: 40px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    margin: 10px auto 4px;
+  }
+  @media (min-width: 768px) { .panel-handle { display: none; } }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .panel-title { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .panel-close {
+    background: rgba(255,255,255,0.08);
+    border: none; color: #f5f5f5;
+    width: 32px; height: 32px; border-radius: 16px;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel-close:hover { background: rgba(255,255,255,0.14); }
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 16px 20px;
+  }
+
+  /* ===== Layer rows ===== */
+  .layer-row {
+    display: flex; align-items: center;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .layer-row:hover { background: rgba(255,255,255,0.06); }
+  .layer-row.active { border-color: rgba(255,140,66,0.5); background: rgba(255,140,66,0.08); }
+  .layer-swatch {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: #333;
+    border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+  .layer-info { flex: 1; min-width: 0; }
+  .layer-name { font-size: 14px; font-weight: 600; }
+  .layer-meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .layer-actions { display: flex; gap: 6px; }
+  .layer-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #f5f5f5;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .layer-btn:hover { background: rgba(255,255,255,0.12); }
+  .layer-btn.locked { color: #ff8c42; }
+  .layer-btn.hidden { color: #555; }
+
+  .add-layer-btn {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255,107,53,0.1);
+    border: 1px dashed rgba(255,107,53,0.4);
+    border-radius: 12px;
+    color: #ff8c42;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+  }
+  .add-layer-btn:hover { background: rgba(255,107,53,0.18); }
+
+  /* ===== Color grid ===== */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .color-chip {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.08);
+    position: relative;
+    transition: transform 0.15s;
+  }
+  .color-chip:hover { transform: scale(1.05); }
+  .color-chip.selected {
+    border-color: #ff8c42;
+    box-shadow: 0 0 0 2px rgba(255,140,66,0.3);
+  }
+  .color-chip.selected::after {
+    content: '✓';
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-weight: 700; font-size: 18px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  .custom-color {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .custom-color input[type=color] {
+    width: 50px; height: 50px;
+    border: none; border-radius: 10px;
+    background: none; cursor: pointer;
+    padding: 0;
+  }
+  .custom-color label { font-size: 13px; color: #ccc; flex: 1; }
+
+  .opacity-row {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+  }
+  .opacity-row label {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: #ccc;
+    margin-bottom: 10px;
+  }
+  .opacity-row input[type=range] {
+    width: 100%;
+    -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+  }
+  .opacity-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+  .opacity-row input[type=range]::-moz-range-thumb {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(40,40,40,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f5f5f5;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== Modal (clipboard prompt, lasso confirm, etc.) ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #1a1a1a;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 24px;
+    max-width: 400px; width: 100%;
+    text-align: center;
+  }
+  .modal h3 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+  .modal p { color: #aaa; font-size: 13px; margin: 0 0 16px; line-height: 1.5; }
+  .modal-img {
+    max-width: 100%; max-height: 200px;
+    border-radius: 10px;
+    margin: 0 auto 16px;
+    display: block;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .modal-buttons { display: flex; gap: 8px; }
+  .modal-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  .modal-btn.primary {
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    color: white;
+  }
+  .modal-btn.secondary {
+    background: rgba(255,255,255,0.08);
+    color: #f5f5f5;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* ===== Project list ===== */
+  .project-row {
+    display: flex; align-items: center;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    gap: 12px;
+  }
+  .project-thumb {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: #333 center/cover no-repeat;
+    flex-shrink: 0;
+  }
+  .project-info { flex: 1; min-width: 0; }
+  .project-name { font-size: 14px; font-weight: 600; }
+  .project-date { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* ===== Lace Editor ===== */
+  .lace-style-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .lace-style-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px;
+    cursor: pointer;
+    color: inherit; font: inherit;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .lace-style-card:hover { background: rgba(255,255,255,0.07); }
+  .lace-style-card.active {
+    border-color: #ff8c42;
+    background: rgba(255,140,66,0.12);
+    box-shadow: 0 0 0 1px rgba(255,140,66,0.4);
+  }
+  .lace-style-preview {
+    width: 100%; height: 44px;
+    background: #222; border-radius: 6px;
+    margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .lace-style-preview canvas { max-width: 100%; }
+  .lace-style-label { font-size: 13px; font-weight: 700; }
+  .lace-style-desc { font-size: 10px; color: #888; line-height: 1.3; margin-top: 2px; }
+
+  .lace-section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .lace-section:first-child { border: none; padding-top: 0; margin-top: 0; }
+  .lace-section-title {
+    font-size: 13px; font-weight: 700;
+    color: #ff8c42;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .lace-count { color: #888; font-weight: 500; font-size: 11px; text-transform: none; letter-spacing: 0; }
+  .lace-help {
+    font-size: 12px; color: #aaa; line-height: 1.5;
+    margin: 0 0 12px;
+    padding: 10px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border-left: 3px solid rgba(255,140,66,0.5);
+  }
+  .lace-buttons { display: flex; gap: 8px; }
+  .lace-action-btn {
+    flex: 1;
+    padding: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #f5f5f5;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .lace-action-btn:hover { background: rgba(255,255,255,0.1); }
+  .lace-action-btn.primary {
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    border: none; color: white;
+  }
+  .lace-action-btn.primary:hover { background: linear-gradient(135deg, #ff7a45, #ff9c52); }
+
+  /* ===== Mode hint ===== */
+  .mode-hint {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,107,53,0.15);
+    border: 1px solid rgba(255,107,53,0.4);
+    color: #ffb347;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ===== Help ===== */
+  .help-section { margin-bottom: 20px; }
+  .help-section h3 { font-size: 13px; color: #ff8c42; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .help-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .help-row:last-child { border: none; }
+  .help-key { color: #ff8c42; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; }
+
+  /* ===== Enlarge controls ===== */
+  .enlarge-bar {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 6px;
+    display: flex; gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .enlarge-bar.visible { opacity: 1; pointer-events: auto; }
+  .enlarge-btn {
+    background: rgba(255,255,255,0.06);
+    border: none; color: #fff;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+  }
+  .enlarge-btn:hover { background: rgba(255,255,255,0.14); }
+
+  /* ===== Build 4 — Textures / Logo / Text ===== */
+  input[type=file] { display:none; }
+  .texture-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+  .texture-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:8px; cursor:pointer; text-align:center; transition:background 0.15s,border-color 0.15s; color:inherit; font:inherit; }
+  .texture-card:hover { background:rgba(255,255,255,0.07); }
+  .texture-card.active { border-color:#ff8c42; background:rgba(255,140,66,0.12); }
+  .texture-preview { width:100%; height:44px; border-radius:6px; margin-bottom:4px; background:#222; display:block; }
+  .texture-label { font-size:11px; font-weight:600; }
+  .section-title { font-size:12px; font-weight:700; color:#ff8c42; text-transform:uppercase; letter-spacing:0.06em; margin:16px 0 8px; }
+  /* Export cards */
+  .export-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; margin-bottom:10px; cursor:pointer; display:flex; align-items:center; gap:14px; transition:background 0.15s,border-color 0.15s; }
+  .export-card:hover { background:rgba(255,107,53,0.08); border-color:rgba(255,107,53,0.4); }
+  .export-icon { font-size:28px; flex-shrink:0; }
+  .export-info { flex:1; }
+  .export-title { font-size:14px; font-weight:700; margin-bottom:2px; }
+  .export-desc { font-size:11px; color:#888; line-height:1.4; }
+  /* Settings */
+  .settings-row { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .settings-row label { font-size:12px; color:#888; }
+  .settings-input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; color:#f5f5f5; font-size:13px; font-family:inherit; -webkit-user-select:text; user-select:text; width:100%; }
+  .settings-input:focus { outline:none; border-color:#ff8c42; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div>
+      <div class="brand">LaceLayer Studio</div>
+      <div class="brand-sub">v1.0 · Complete</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnUndo" title="Undo">↶</button>
+      <button class="icon-btn" id="btnRedo" title="Redo">↷</button>
+      <button class="icon-btn" id="btnSettings" title="Settings">⚙</button>
+      <button class="icon-btn" id="btnHelp" title="Help">?</button>
+    </div>
+  </div>
+
+  <!-- Recent captures strip -->
+  <div class="recents empty" id="recentsStrip"></div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="canvas"></canvas>
+    <div class="zoom-pill" id="zoomPill">100%</div>
+    <div class="enlarge-bar" id="enlargeBar">
+      <button class="enlarge-btn" id="btnZoomOut" title="Zoom out">−</button>
+      <button class="enlarge-btn" id="btnFit" title="Fit to screen">⤢</button>
+      <button class="enlarge-btn" id="btnZoomIn" title="Zoom in / enlarge small image">+</button>
+    </div>
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">👟</div>
+      <h2 class="empty-title">Capture a shoe</h2>
+      <p class="empty-sub">Grab any shoe from anywhere — Instagram, Amazon, a screenshot, your camera. Pick how you want to bring it in:</p>
+
+      <div class="capture-grid">
+        <button class="capture-card primary" id="capCamera">
+          <span class="capture-icon">📷</span>
+          <div class="capture-title">Camera or Photos</div>
+          <div class="capture-desc">Take a new photo or pick from your library</div>
+        </button>
+        <button class="capture-card" id="capPaste">
+          <span class="capture-icon">📋</span>
+          <div class="capture-title">Paste Image</div>
+          <div class="capture-desc">Long-press an image online → Copy, then tap here</div>
+        </button>
+        <button class="capture-card" id="capUrl">
+          <span class="capture-icon">🔗</span>
+          <div class="capture-title">From URL</div>
+          <div class="capture-desc">Paste an image link from any website</div>
+        </button>
+        <button class="capture-card" id="capScreen" style="grid-column: 1 / -1;">
+          <span class="capture-icon">✂️</span>
+          <div class="capture-title">From Screenshot</div>
+          <div class="capture-desc">Already screenshotted it? Pick from your library + use the Lasso to crop just the shoe</div>
+        </button>
+      </div>
+
+      <div class="url-input-wrap" id="urlInputWrap" style="display:none;">
+        <input class="url-input" id="urlInput" type="url" placeholder="https://...image.jpg" inputmode="url" />
+        <button class="url-go" id="urlGo">Go</button>
+      </div>
+
+      <div class="empty-tip">
+        <b>iPhone tip:</b> When you see a shoe in any app, long-press the image, tap <b>Copy</b>, switch to LaceLayer — it'll auto-detect and ask to import. <br><br>
+        <b>Add to Home Screen</b> for full-screen app experience: Share → Add to Home Screen.
+      </div>
+    </div>
+    <div class="mode-hint" id="modeHint" style="display:none;"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool" data-action="capture"><span class="ic">📷</span><span>Capture</span></button>
+    <button class="tool disabled" data-action="lasso" id="toolLasso"><span class="ic">✂️</span><span>Lasso</span></button>
+    <button class="tool disabled" data-action="layers" id="toolLayers"><span class="ic">⊟</span><span>Layers</span></button>
+    <button class="tool disabled" data-action="zones" id="toolZones"><span class="ic">✏️</span><span>Draw</span></button>
+    <button class="tool disabled" data-action="colors" id="toolColors"><span class="ic">🎨</span><span>Colors</span></button>
+    <button class="tool disabled" data-action="laces" id="toolLaces"><span class="ic">🪢</span><span>Laces</span></button>
+    <button class="tool disabled" data-action="logos" id="toolLogos"><span class="ic">🏷</span><span>Logo</span></button>
+    <button class="tool disabled" data-action="texts" id="toolTexts"><span class="ic">T</span><span>Text</span></button>
+    <button class="tool disabled" data-action="lighting" id="toolLighting"><span class="ic">💡</span><span>Lighting</span></button>
+    <button class="tool disabled" data-action="ai" id="toolAi"><span class="ic">🤖</span><span>AI Zones</span></button>
+    <button class="tool disabled" data-action="projects" id="toolProjects"><span class="ic">💾</span><span>Saved</span></button>
+    <button class="tool disabled" data-action="export" id="toolExport"><span class="ic">⬇</span><span>Export</span></button>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" />
+<input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml" />
+
+<!-- Sliding panel -->
+<div class="panel-overlay" id="panelOverlay"></div>
+<div class="panel" id="panel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div class="panel-title" id="panelTitle">Layers</div>
+    <button class="panel-close" id="panelClose">✕</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- Modal (used for clipboard import confirm + lasso confirm) -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   LaceLayer Studio v0.2 — Build 1+2 with Capture-Anywhere
+   Single-file HTML · iPhone + Galaxy + Laptop
+   Storage key: lls1 — DO NOT CHANGE
+   ============================================================ */
+
+const STORAGE_KEY = 'lls1';
+const CURRENT_PROJECT_KEY = 'lls1_current';
+const RECENTS_KEY = 'lls1_recents';
+const SETTINGS_KEY = 'lls1_settings';
+const FONTS = ['system-ui', 'Georgia', 'Courier New', 'Impact', 'Arial Black'];
+const TEXTURES = ['solid', 'leather', 'suede', 'mesh', 'camo'];
+
+let settings = { anthropicKey: '' };
+function loadSettings() { try { const s = localStorage.getItem(SETTINGS_KEY); if (s) settings = { ...settings, ...JSON.parse(s) }; } catch {} }
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {} }
+
+const state = {
+  shoeImage: null,
+  shoeImageData: null,
+  view: { x: 0, y: 0, scale: 1, baseScale: 1 },
+  layers: [],
+  activeLayerId: null,
+  mode: 'view', // view | draw | lasso | eyelets
+  history: [],
+  historyIndex: -1,
+  drawingPoints: [],
+  lassoPoints: [],
+  logos: [],    // [{id,imgEl,data,x,y,w,h,rot,opacity,hidden}]
+  texts: [],    // [{id,text,x,y,fontSize,color,fontFamily,rot,opacity,outline,outlineColor,hidden}]
+  activeLogoId: null,
+  activeTextId: null,
+  activeDragGesture: null,
+  recents: [],
+  activeRecentId: null
+};
+
+const DEFAULT_ZONES = [
+  { name: 'Toe Box',     color: '#e63946' },
+  { name: 'Side Panel',  color: '#457b9d' },
+  { name: 'Heel Panel',  color: '#f4a261' },
+  { name: 'Collar',      color: '#2a9d8f' },
+  { name: 'Tongue',      color: '#e9c46a' },
+  { name: 'Sole',        color: '#264653' },
+  { name: 'Midsole',     color: '#a8dadc' },
+  { name: 'Laces',       color: '#ffffff', role: 'laces' },
+  { name: 'Shadows',     color: '#000000', role: 'shadows',    opacity: 0.35 },
+  { name: 'Highlights',  color: '#ffffff', role: 'highlights', opacity: 0.25 }
+];
+
+const DEFAULT_PALETTE = [
+  '#000000','#ffffff','#e63946','#f4a261','#e9c46a','#2a9d8f',
+  '#457b9d','#1d3557','#9d4edd','#ff6b35','#06d6a0','#ef476f',
+  '#8338ec','#3a86ff','#ffbe0b','#fb5607','#a8dadc','#cdb4db'
+];
+
+// ---------- DOM ----------
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+const empty = document.getElementById('emptyState');
+const zoomPill = document.getElementById('zoomPill');
+const fileInput = document.getElementById('fileInput');
+const toast = document.getElementById('toast');
+const panel = document.getElementById('panel');
+const panelOverlay = document.getElementById('panelOverlay');
+const panelTitle = document.getElementById('panelTitle');
+const panelBody = document.getElementById('panelBody');
+const panelClose = document.getElementById('panelClose');
+const modeHint = document.getElementById('modeHint');
+const modalOverlay = document.getElementById('modalOverlay');
+const modal = document.getElementById('modal');
+const recentsStrip = document.getElementById('recentsStrip');
+const enlargeBar = document.getElementById('enlargeBar');
+
+// ---------- Canvas sizing ----------
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (state.shoeImage) {
+    fitImage();
+    render();
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+
+// ---------- Toast ----------
+let toastTimer;
+function showToast(msg, ms = 2200) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
+}
+
+// ---------- Image fit (with smart enlargement of small images) ----------
+function fitImage() {
+  if (!state.shoeImage) return;
+  const rect = wrap.getBoundingClientRect();
+  const padding = 40;
+  const availW = Math.max(100, rect.width - padding * 2);
+  const availH = Math.max(100, rect.height - padding * 2);
+  // For tiny images, scale UP to fill the screen (useful for grabbed thumbnails)
+  const scale = Math.min(availW / state.shoeImage.width, availH / state.shoeImage.height);
+  state.view.baseScale = scale;
+  state.view.scale = scale;
+  state.view.x = (rect.width - state.shoeImage.width * scale) / 2;
+  state.view.y = (rect.height - state.shoeImage.height * scale) / 2;
+}
+
+function zoomBy(factor, focusX, focusY) {
+  const rect = wrap.getBoundingClientRect();
+  const fx = focusX ?? rect.width / 2;
+  const fy = focusY ?? rect.height / 2;
+  const newScale = Math.max(0.05, Math.min(40, state.view.scale * factor));
+  state.view.x = fx - (fx - state.view.x) * (newScale / state.view.scale);
+  state.view.y = fy - (fy - state.view.y) * (newScale / state.view.scale);
+  state.view.scale = newScale;
+  showZoom();
+  render();
+}
+
+// ---------- Lace rendering helpers ----------
+function drawLayerShapes(c, layer) {
+  if (!layer.visible || !layer.shapes || layer.shapes.length === 0) return;
+  layer.shapes.forEach(shape => {
+    if (!shape.points || shape.points.length < 3) return;
+    c.save();
+    c.globalAlpha = layer.opacity;
+    c.fillStyle = layer.color;
+    c.beginPath();
+    c.moveTo(shape.points[0].x, shape.points[0].y);
+    for (let i = 1; i < shape.points.length; i++) c.lineTo(shape.points[i].x, shape.points[i].y);
+    c.closePath();
+    c.fill();
+    if (layer.id === state.activeLayerId && state.mode === 'view') {
+      c.globalAlpha = 1;
+      c.strokeStyle = '#ff8c42';
+      c.lineWidth = 2 / state.view.scale;
+      c.setLineDash([6 / state.view.scale, 4 / state.view.scale]);
+      c.stroke();
+      c.setLineDash([]);
+    }
+    c.restore();
+  });
+}
+
+// Procedural lace renderer — draws criss-cross laces between eyelet pairs
+// Eyelets are stored alternating: [left0, right0, left1, right1, ...]
+// Style affects stroke appearance
+function drawProceduralLaces(c, layer) {
+  const eyelets = layer.laceEyelets || [];
+  if (eyelets.length < 4) return; // need at least 2 pairs (4 points) to lace
+  const pairs = Math.floor(eyelets.length / 2);
+  const thickness = layer.laceThickness || 8;
+  const color = layer.laceColor || '#ffffff';
+  const style = layer.laceStyle;
+  const opacity = layer.opacity ?? 1;
+
+  c.save();
+  c.globalAlpha = opacity;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+
+  // For each pair, draw a criss-cross to the NEXT pair down
+  for (let i = 0; i < pairs - 1; i++) {
+    const L1 = eyelets[i * 2];
+    const R1 = eyelets[i * 2 + 1];
+    const L2 = eyelets[(i + 1) * 2];
+    const R2 = eyelets[(i + 1) * 2 + 1];
+    if (!L1 || !R1 || !L2 || !R2) continue;
+    // Two diagonal lines: L1→R2 and R1→L2 (classic criss-cross)
+    drawLaceStroke(c, L1, R2, color, thickness, style);
+    drawLaceStroke(c, R1, L2, color, thickness, style);
+  }
+
+  // Top horizontal across the topmost pair (the bow location)
+  if (pairs >= 1) {
+    const Ltop = eyelets[0];
+    const Rtop = eyelets[1];
+    if (Ltop && Rtop) drawLaceStroke(c, Ltop, Rtop, color, thickness * 0.85, style);
+  }
+
+  // Eyelet holes (small dark dots so it looks like the lace goes through)
+  c.fillStyle = '#1a1a1a';
+  eyelets.forEach(p => {
+    c.beginPath();
+    c.arc(p.x, p.y, thickness * 0.5, 0, Math.PI * 2);
+    c.fill();
+  });
+
+  c.restore();
+}
+
+function drawLaceStroke(c, p1, p2, color, thickness, style) {
+  c.lineWidth = thickness;
+
+  if (style === 'flat') {
+    // Flat lace = thick rectangle-like stroke with subtle gradient
+    c.strokeStyle = color;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+    // Highlight stripe
+    c.strokeStyle = lightenHex(color, 0.25);
+    c.lineWidth = thickness * 0.3;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+  } else if (style === 'round') {
+    // Round lace = thicker, with a darker outer edge for depth
+    c.strokeStyle = darkenHex(color, 0.25);
+    c.lineWidth = thickness * 1.1;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+    c.strokeStyle = color;
+    c.lineWidth = thickness * 0.8;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+  } else if (style === 'rope') {
+    // Rope = twisted look with multiple strands
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    const steps = Math.max(8, Math.floor(len / (thickness * 0.6)));
+    c.strokeStyle = color;
+    c.lineWidth = thickness;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+    // Twist marks
+    c.strokeStyle = darkenHex(color, 0.4);
+    c.lineWidth = thickness * 0.15;
+    const perpX = -dy / len, perpY = dx / len;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const cx = p1.x + dx * t, cy = p1.y + dy * t;
+      const offset = thickness * 0.4;
+      c.beginPath();
+      c.moveTo(cx - perpX * offset, cy - perpY * offset);
+      c.lineTo(cx + perpX * offset + dx / steps * 0.3, cy + perpY * offset + dy / steps * 0.3);
+      c.stroke();
+    }
+  } else if (style === 'reflective') {
+    // Reflective = bright base with mirror-like center stripe
+    c.strokeStyle = darkenHex(color, 0.3);
+    c.lineWidth = thickness;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+    // Bright reflective core
+    const grad = c.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.5, '#e0f0ff');
+    grad.addColorStop(1, '#ffffff');
+    c.strokeStyle = grad;
+    c.lineWidth = thickness * 0.55;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+  } else {
+    // Fallback solid
+    c.strokeStyle = color;
+    c.beginPath(); c.moveTo(p1.x, p1.y); c.lineTo(p2.x, p2.y); c.stroke();
+  }
+}
+
+function drawEyeletMarkers(c, eyelets, editMode) {
+  c.save();
+  eyelets.forEach((p, i) => {
+    const isLeft = i % 2 === 0;
+    c.beginPath();
+    c.arc(p.x, p.y, 8 / state.view.scale, 0, Math.PI * 2);
+    c.fillStyle = editMode ? (isLeft ? '#ff6b35' : '#3a86ff') : 'rgba(255,140,66,0.6)';
+    c.fill();
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1.5 / state.view.scale;
+    c.stroke();
+    if (editMode) {
+      c.fillStyle = '#fff';
+      c.font = `bold ${10 / state.view.scale}px sans-serif`;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(Math.floor(i / 2) + 1), p.x, p.y);
+    }
+  });
+  c.restore();
+}
+
+// Color helpers
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  return { r: parseInt(v.slice(0, 2), 16), g: parseInt(v.slice(2, 4), 16), b: parseInt(v.slice(4, 6), 16) };
+}
+function rgbToHex(r, g, b) {
+  const c = n => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return '#' + c(r) + c(g) + c(b);
+}
+function lightenHex(hex, amt) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt);
+}
+function darkenHex(hex, amt) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex(r * (1 - amt), g * (1 - amt), b * (1 - amt));
+}
+
+// ---------- Render ----------
+function render() {
+  const rect = wrap.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  if (!state.shoeImage) return;
+
+  ctx.save();
+  ctx.translate(state.view.x, state.view.y);
+  ctx.scale(state.view.scale, state.view.scale);
+
+  // Use crisp pixel art look when zoomed way in on small images
+  ctx.imageSmoothingEnabled = state.view.scale < 4;
+  ctx.drawImage(state.shoeImage, 0, 0);
+
+  // 1. Zone layers (non-special roles only)
+  state.layers.filter(l => l.role === 'zone' || !l.role).forEach(layer => drawLayerShapes(ctx, layer));
+
+  // 2. Logos and texts — sit above zones, below laces
+  if (typeof drawLogosAndTexts === 'function') drawLogosAndTexts(ctx);
+
+  // 3. Laces always above logos/texts
+  const lacesLayer = state.layers.find(l => l.role === 'laces');
+  if (lacesLayer && lacesLayer.visible) {
+    if (lacesLayer.laceStyle === 'original' || !lacesLayer.laceStyle) {
+      drawLayerShapes(ctx, lacesLayer);
+    } else if (lacesLayer.laceStyle !== 'none') {
+      drawProceduralLaces(ctx, lacesLayer);
+      if (lacesLayer.id === state.activeLayerId && state.mode === 'view') {
+        drawEyeletMarkers(ctx, lacesLayer.laceEyelets, false);
+      }
+    }
+  }
+  if (state.mode === 'eyelets' && lacesLayer) drawEyeletMarkers(ctx, lacesLayer.laceEyelets, true);
+
+  // 4. Shadows — multiply blend (darkens, preserves hue)
+  const shadowL = state.layers.find(l => l.role === 'shadows');
+  if (shadowL && shadowL.visible && shadowL.shapes && shadowL.shapes.length > 0) {
+    ctx.save(); ctx.globalCompositeOperation = 'multiply';
+    drawLayerShapes(ctx, shadowL); ctx.restore();
+  }
+
+  // 5. Highlights — screen blend (brightens, preserves hue)
+  const hlL = state.layers.find(l => l.role === 'highlights');
+  if (hlL && hlL.visible && hlL.shapes && hlL.shapes.length > 0) {
+    ctx.save(); ctx.globalCompositeOperation = 'screen';
+    drawLayerShapes(ctx, hlL); ctx.restore();
+  }
+
+  // In-progress zone drawing
+  if (state.mode === 'draw' && state.drawingPoints.length > 0) {
+    const layer = getActiveLayer();
+    drawPolyInProgress(state.drawingPoints, (layer ? layer.color : '#ff8c42') + '50', '#ff8c42');
+  }
+  if (state.mode === 'lasso' && state.lassoPoints.length > 0) {
+    drawPolyInProgress(state.lassoPoints, 'rgba(255,140,66,0.15)', '#ff8c42', true);
+  }
+
+  ctx.restore();
+}
+
+function drawPolyInProgress(points, fill, stroke, isLasso = false) {
+  ctx.save();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = (isLasso ? 2 : 3) / state.view.scale;
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  if (points.length > 2) ctx.fill();
+  ctx.stroke();
+  if (!isLasso) {
+    points.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6 / state.view.scale, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#ff6b35' : '#fff';
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1.5 / state.view.scale;
+      ctx.stroke();
+    });
+  }
+  ctx.restore();
+}
+
+function screenToImage(sx, sy) {
+  return { x: (sx - state.view.x) / state.view.scale, y: (sy - state.view.y) / state.view.scale };
+}
+
+function showZoom() {
+  zoomPill.textContent = Math.round((state.view.scale / state.view.baseScale) * 100) + '%';
+  zoomPill.classList.add('visible');
+  clearTimeout(showZoom._t);
+  showZoom._t = setTimeout(() => zoomPill.classList.remove('visible'), 1200);
+}
+
+function resetView() {
+  if (!state.shoeImage) return;
+  fitImage(); render(); showToast('View reset');
+}
+
+// ---------- Pointer (touch + mouse unified) ----------
+let pointers = new Map();
+let gestureState = null;
+
+function getCanvasPoint(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function midpoint(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+canvas.addEventListener('pointerdown', e => {
+  if (!state.shoeImage) return;
+  e.preventDefault();
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, getCanvasPoint(e));
+  const p = getCanvasPoint(e);
+
+  // Eyelet placement mode
+  if (state.mode === 'eyelets' && pointers.size === 1) {
+    addEyelet(p);
+    return;
+  }
+
+  // Lasso = drag-to-draw (continuous)
+  if (state.mode === 'lasso' && pointers.size === 1) {
+    state.lassoPoints = [screenToImage(p.x, p.y)];
+    gestureState = { type: 'lasso' };
+    return;
+  }
+
+  // Zone draw = tap-to-place point
+  if (state.mode === 'draw' && pointers.size === 1) {
+    addDrawPoint(p);
+    return;
+  }
+
+  // In view mode with single pointer — check logo/text drag first
+  if (state.mode === 'view' && pointers.size === 1 && typeof tryStartLogoDrag === 'function') {
+    if (tryStartLogoDrag(p)) {
+      gestureState = { type: 'objdrag' };
+      return;
+    }
+  }
+
+  if (pointers.size === 1) {
+    gestureState = { type: 'pan', startX: p.x, startY: p.y, startVX: state.view.x, startVY: state.view.y };
+    canvas.classList.add('grabbing');
+  } else if (pointers.size === 2) {
+    const pts = Array.from(pointers.values());
+    gestureState = {
+      type: 'pinch',
+      startDist: distance(pts[0], pts[1]),
+      startScale: state.view.scale,
+      startMid: midpoint(pts[0], pts[1]),
+      startVX: state.view.x, startVY: state.view.y
+    };
+  }
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!state.shoeImage || !pointers.has(e.pointerId)) return;
+  e.preventDefault();
+  pointers.set(e.pointerId, getCanvasPoint(e));
+  const p = getCanvasPoint(e);
+
+  if (gestureState?.type === 'lasso' && pointers.size === 1) {
+    const imgP = screenToImage(p.x, p.y);
+    const last = state.lassoPoints[state.lassoPoints.length - 1];
+    if (!last || Math.hypot(imgP.x - last.x, imgP.y - last.y) > 2 / state.view.scale) {
+      state.lassoPoints.push(imgP);
+      render();
+    }
+  } else if (gestureState?.type === 'objdrag' && pointers.size === 1) {
+    if (typeof moveDragObj === 'function') moveDragObj(p);
+  } else if (gestureState?.type === 'pan' && pointers.size === 1) {
+    state.view.x = gestureState.startVX + (p.x - gestureState.startX);
+    state.view.y = gestureState.startVY + (p.y - gestureState.startY);
+    render();
+  } else if (gestureState?.type === 'pinch' && pointers.size >= 2) {
+    const pts = Array.from(pointers.values()).slice(0, 2);
+    const dist = distance(pts[0], pts[1]);
+    const newScale = Math.max(0.05, Math.min(40, gestureState.startScale * (dist / gestureState.startDist)));
+    const mid = gestureState.startMid;
+    state.view.x = mid.x - (mid.x - gestureState.startVX) * (newScale / gestureState.startScale);
+    state.view.y = mid.y - (mid.y - gestureState.startVY) * (newScale / gestureState.startScale);
+    state.view.scale = newScale;
+    showZoom();
+    render();
+  }
+});
+
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (gestureState?.type === 'lasso' && pointers.size === 0) {
+    finishLasso();
+    gestureState = null;
+    return;
+  }
+  if (gestureState?.type === 'objdrag' && pointers.size === 0) {
+    saveProject(); gestureState = null; state.activeDragGesture = null; return;
+  }
+  if (pointers.size === 0) {
+    gestureState = null;
+    canvas.classList.remove('grabbing');
+  } else if (pointers.size === 1 && gestureState?.type === 'pinch') {
+    const p = Array.from(pointers.values())[0];
+    gestureState = { type: 'pan', startX: p.x, startY: p.y, startVX: state.view.x, startVY: state.view.y };
+  }
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+
+// Wheel zoom (laptop)
+canvas.addEventListener('wheel', e => {
+  if (!state.shoeImage) return;
+  e.preventDefault();
+  const p = getCanvasPoint(e);
+  zoomBy(e.deltaY < 0 ? 1.15 : 0.87, p.x, p.y);
+}, { passive: false });
+
+// Drag-drop (laptop)
+['dragover', 'dragenter'].forEach(ev => wrap.addEventListener(ev, e => e.preventDefault()));
+wrap.addEventListener('drop', e => {
+  e.preventDefault();
+  // File from desktop
+  if (e.dataTransfer.files[0] && e.dataTransfer.files[0].type.startsWith('image/')) {
+    handleFile(e.dataTransfer.files[0]); return;
+  }
+  // Image dragged from browser tab → URL
+  const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+  if (url && /^https?:/.test(url)) loadImageFromUrl(url);
+});
+
+// ---------- Zone drawing (tap-to-place) ----------
+function addDrawPoint(screenP) {
+  const layer = getActiveLayer();
+  if (!layer || layer.locked) { showToast('Select an unlocked layer first'); return; }
+  const imgP = screenToImage(screenP.x, screenP.y);
+  if (state.drawingPoints.length >= 3) {
+    const first = state.drawingPoints[0];
+    const screenFirst = { x: first.x * state.view.scale + state.view.x, y: first.y * state.view.scale + state.view.y };
+    if (distance(screenP, screenFirst) < 24) { finishDrawing(); return; }
+  }
+  state.drawingPoints.push(imgP);
+  updateModeHint();
+  render();
+}
+function finishDrawing() {
+  const layer = getActiveLayer();
+  if (!layer || state.drawingPoints.length < 3) {
+    state.drawingPoints = []; setMode('view'); render(); return;
+  }
+  pushHistory();
+  if (!layer.shapes) layer.shapes = [];
+  layer.shapes.push({ points: state.drawingPoints.slice() });
+  state.drawingPoints = []; setMode('view'); saveProject(); render();
+  const count = layer.shapes.length;
+  showToast(`${layer.name}: shape ${count} added`);
+}
+function cancelDrawing() {
+  state.drawingPoints = []; state.lassoPoints = [];
+  setMode('view'); render(); showToast('Cancelled');
+}
+
+// ---------- Eyelet placement (Lace Editor) ----------
+function addEyelet(screenP) {
+  const laces = getLacesLayer();
+  if (!laces) { showToast('No Laces layer found'); return; }
+  if (laces.locked) { showToast('Laces layer is locked'); return; }
+  const imgP = screenToImage(screenP.x, screenP.y);
+  // If close to an existing eyelet, remove it (toggle behavior)
+  const removeRadius = 12 / state.view.scale;
+  for (let i = 0; i < laces.laceEyelets.length; i++) {
+    const e = laces.laceEyelets[i];
+    if (Math.hypot(e.x - imgP.x, e.y - imgP.y) < removeRadius) {
+      pushHistory();
+      laces.laceEyelets.splice(i, 1);
+      saveProject(); render(); updateModeHint();
+      return;
+    }
+  }
+  pushHistory();
+  laces.laceEyelets.push(imgP);
+  saveProject(); render(); updateModeHint();
+}
+
+function clearEyelets() {
+  const laces = getLacesLayer();
+  if (!laces) return;
+  pushHistory();
+  laces.laceEyelets = [];
+  saveProject(); render(); refreshPanelIfOpen();
+  showToast('Eyelets cleared');
+}
+
+function finishEyelets() {
+  setMode('view');
+  const laces = getLacesLayer();
+  const n = laces ? laces.laceEyelets.length : 0;
+  showToast(`${Math.floor(n / 2)} lace pair${Math.floor(n/2) !== 1 ? 's' : ''} placed`);
+}
+
+// ---------- Lasso (crop the shoe out of a busy image) ----------
+function finishLasso() {
+  if (state.lassoPoints.length < 10) {
+    state.lassoPoints = []; setMode('view'); render();
+    showToast('Drew too short, try again', 1500);
+    return;
+  }
+  // Confirm in modal
+  showLassoConfirm();
+}
+
+function applyLassoCrop() {
+  const pts = state.lassoPoints;
+  if (pts.length < 3) return;
+
+  // Bounding box in image coords
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  pts.forEach(p => {
+    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+  });
+  // Clamp to image bounds
+  minX = Math.max(0, Math.floor(minX)); minY = Math.max(0, Math.floor(minY));
+  maxX = Math.min(state.shoeImage.width, Math.ceil(maxX));
+  maxY = Math.min(state.shoeImage.height, Math.ceil(maxY));
+  const w = maxX - minX, h = maxY - minY;
+  if (w < 10 || h < 10) { showToast('Selection too small'); state.lassoPoints = []; setMode('view'); render(); return; }
+
+  // Build cropped image with lasso mask
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const octx = out.getContext('2d');
+
+  // Clip to lasso shape (translated into local coords)
+  octx.beginPath();
+  octx.moveTo(pts[0].x - minX, pts[0].y - minY);
+  for (let i = 1; i < pts.length; i++) octx.lineTo(pts[i].x - minX, pts[i].y - minY);
+  octx.closePath();
+  octx.clip();
+
+  // Draw the cropped portion of the original
+  octx.drawImage(state.shoeImage, -minX, -minY);
+
+  // Replace the working image with the cropped one
+  const dataUrl = out.toDataURL('image/png');
+  state.shoeImageData = dataUrl;
+  state.lassoPoints = [];
+  setMode('view');
+  loadImageFromData(dataUrl).then(() => {
+    // Reset zones because coordinates changed
+    state.layers.forEach(l => l.shapes = []);
+    pushHistory();
+    saveProject();
+    addToRecents(dataUrl);
+    showToast('Cropped to selection · zones cleared');
+  });
+}
+
+function showLassoConfirm() {
+  // Build a preview thumb of the cropped result
+  const pts = state.lassoPoints;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  pts.forEach(p => {
+    if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+  });
+  minX = Math.max(0, Math.floor(minX)); minY = Math.max(0, Math.floor(minY));
+  maxX = Math.min(state.shoeImage.width, Math.ceil(maxX));
+  maxY = Math.min(state.shoeImage.height, Math.ceil(maxY));
+  const w = maxX - minX, h = maxY - minY;
+  if (w < 10 || h < 10) { state.lassoPoints = []; setMode('view'); render(); showToast('Too small'); return; }
+  const preview = document.createElement('canvas');
+  preview.width = w; preview.height = h;
+  const pctx = preview.getContext('2d');
+  pctx.beginPath();
+  pctx.moveTo(pts[0].x - minX, pts[0].y - minY);
+  for (let i = 1; i < pts.length; i++) pctx.lineTo(pts[i].x - minX, pts[i].y - minY);
+  pctx.closePath();
+  pctx.clip();
+  pctx.drawImage(state.shoeImage, -minX, -minY);
+  const previewUrl = preview.toDataURL('image/png');
+
+  modal.innerHTML = `
+    <h3>Crop to selection?</h3>
+    <p>This will replace the canvas with just the area you circled. Zones will reset.</p>
+    <img class="modal-img" src="${previewUrl}" alt="Cropped preview" />
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" id="lassoCancel">Keep original</button>
+      <button class="modal-btn primary" id="lassoOk">Crop it</button>
+    </div>
+  `;
+  modalOverlay.classList.add('open');
+  document.getElementById('lassoCancel').onclick = () => {
+    modalOverlay.classList.remove('open');
+    state.lassoPoints = []; setMode('view'); render();
+  };
+  document.getElementById('lassoOk').onclick = () => {
+    modalOverlay.classList.remove('open');
+    applyLassoCrop();
+  };
+}
+
+// ---------- Mode ----------
+function updateModeHint() {
+  if (state.mode === 'draw') {
+    const layer = getActiveLayer();
+    const n = state.drawingPoints.length;
+    let msg;
+    if (n === 0) msg = `Tap to place 1st point of ${layer?.name || 'zone'}`;
+    else if (n < 3) msg = `${n} point${n>1?'s':''} · need ${3-n} more`;
+    else msg = `${n} points · tap 1st point or press Space to finish`;
+    modeHint.textContent = msg;
+  } else if (state.mode === 'lasso') {
+    modeHint.textContent = '✏️ Circle around the shoe with your finger or pen';
+  } else if (state.mode === 'eyelets') {
+    const laces = getLacesLayer();
+    const n = laces ? laces.laceEyelets.length : 0;
+    const pairs = Math.floor(n / 2);
+    const nextSide = (n % 2 === 0) ? 'LEFT (orange)' : 'RIGHT (blue)';
+    let msg;
+    if (n === 0) msg = `Tap to place LEFT eyelet of pair 1`;
+    else msg = `${pairs} pair${pairs!==1?'s':''} · next: ${nextSide} of pair ${pairs + 1} · tap eyelet to remove`;
+    modeHint.textContent = msg;
+  }
+}
+function setMode(m) {
+  state.mode = m;
+  canvas.classList.remove('draw-mode', 'lasso-mode');
+  document.getElementById('toolZones').classList.remove('active');
+  document.getElementById('toolLasso').classList.remove('active');
+  const lacesTool = document.getElementById('toolLaces');
+  if (lacesTool) lacesTool.classList.remove('active');
+  if (m === 'draw') {
+    modeHint.style.display = 'block';
+    canvas.classList.add('draw-mode');
+    document.getElementById('toolZones').classList.add('active');
+    updateModeHint();
+  } else if (m === 'lasso') {
+    modeHint.style.display = 'block';
+    canvas.classList.add('lasso-mode');
+    document.getElementById('toolLasso').classList.add('active');
+    updateModeHint();
+    state.lassoPoints = [];
+  } else if (m === 'eyelets') {
+    modeHint.style.display = 'block';
+    canvas.classList.add('draw-mode');
+    if (lacesTool) lacesTool.classList.add('active');
+    updateModeHint();
+  } else {
+    modeHint.style.display = 'none';
+    state.drawingPoints = []; state.lassoPoints = [];
+  }
+}
+
+// ---------- Layers ----------
+function uid() { return 'L' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function getActiveLayer() { return state.layers.find(l => l.id === state.activeLayerId); }
+function addLayer(opts = {}) {
+  pushHistory();
+  const layer = {
+    id: uid(),
+    name: opts.name || `Layer ${state.layers.length + 1}`,
+    color: opts.color || '#ff6b35',
+    opacity: 0.6, visible: true, locked: false, shapes: []
+  };
+  state.layers.push(layer);
+  state.activeLayerId = layer.id;
+  saveProject();
+  return layer;
+}
+function deleteLayer(id) {
+  pushHistory();
+  state.layers = state.layers.filter(l => l.id !== id);
+  if (state.activeLayerId === id) state.activeLayerId = state.layers[0]?.id || null;
+  saveProject(); render(); refreshPanelIfOpen();
+}
+function setupDefaultLayers() {
+  state.layers = [];
+  DEFAULT_ZONES.forEach(z => {
+    const layer = {
+      id: uid(), name: z.name, color: z.color,
+      opacity: z.opacity ?? 0.5, visible: true, locked: false, shapes: [],
+      role: z.role || 'zone', fillType: 'solid'
+    };
+    if (z.role === 'laces') {
+      layer.laceStyle = 'original';
+      layer.laceEyelets = [];
+      layer.laceColor = '#ffffff';
+      layer.laceThickness = 8;
+      layer.opacity = 1.0;
+    }
+    state.layers.push(layer);
+  });
+  state.activeLayerId = state.layers[0].id;
+}
+
+// ---------- History ----------
+function snapshot() {
+  return JSON.stringify({
+    layers: state.layers,
+    activeLayerId: state.activeLayerId,
+    logos: state.logos.map(l => ({ ...l, imgEl: undefined })),
+    texts: state.texts
+  });
+}
+function pushHistory() {
+  state.history = state.history.slice(0, state.historyIndex + 1);
+  state.history.push(snapshot());
+  if (state.history.length > 50) state.history.shift();
+  state.historyIndex = state.history.length - 1;
+}
+function undo() {
+  if (state.historyIndex <= 0) { showToast('Nothing to undo'); return; }
+  state.historyIndex--; restoreFrom(state.history[state.historyIndex]); showToast('Undone');
+}
+function redo() {
+  if (state.historyIndex >= state.history.length - 1) { showToast('Nothing to redo'); return; }
+  state.historyIndex++; restoreFrom(state.history[state.historyIndex]); showToast('Redone');
+}
+function restoreFrom(snap) {
+  const data = JSON.parse(snap);
+  state.layers = migrateLayers(data.layers || []);
+  state.activeLayerId = data.activeLayerId;
+  state.logos = (data.logos || []).map(l => { const obj={...l}; const img=new Image(); img.onload=()=>{obj.imgEl=img;render();}; img.src=l.data||''; return obj; });
+  state.texts = data.texts || [];
+  saveProject(); render(); refreshPanelIfOpen();
+}
+
+// Migrate old format (layer.points) → new format (layer.shapes)
+// Also adds role + lace defaults to legacy Laces layers
+function migrateLayers(layers) {
+  if (!Array.isArray(layers)) return [];
+  return layers.map(l => {
+    const newL = { ...l };
+    if (!newL.shapes) {
+      if (Array.isArray(l.points) && l.points.length >= 3) {
+        newL.shapes = [{ points: l.points }];
+      } else {
+        newL.shapes = [];
+      }
+      delete newL.points;
+    }
+    if (!newL.role) {
+      const n = newL.name && newL.name.toLowerCase();
+      newL.role = n === 'laces' ? 'laces' : n === 'shadows' ? 'shadows' : n === 'highlights' ? 'highlights' : 'zone';
+    }
+    if (!newL.fillType) newL.fillType = 'solid';
+    if (newL.role === 'laces') {
+      if (!newL.laceStyle) newL.laceStyle = 'original';
+      if (!Array.isArray(newL.laceEyelets)) newL.laceEyelets = [];
+      if (!newL.laceColor) newL.laceColor = newL.color || '#ffffff';
+      if (typeof newL.laceThickness !== 'number') newL.laceThickness = 8;
+    }
+    return newL;
+  });
+}
+
+function getLacesLayer() {
+  return state.layers.find(l => l.role === 'laces');
+}
+
+// ---------- Storage ----------
+function saveProject() {
+  if (!state.shoeImageData) return;
+  const project = {
+    image: state.shoeImageData,
+    layers: state.layers, activeLayerId: state.activeLayerId,
+    logos: state.logos.map(l => ({ ...l, imgEl: undefined })),
+    texts: state.texts,
+    activeRecentId: state.activeRecentId,
+    savedAt: Date.now()
+  };
+  try { localStorage.setItem(CURRENT_PROJECT_KEY, JSON.stringify(project)); }
+  catch (e) { showToast('Save failed — image too large'); }
+}
+function loadImageFromData(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      state.shoeImage = img;
+      empty.style.display = 'none';
+      enableTools();
+      enlargeBar.classList.add('visible');
+      fitImage();
+      pushHistory();
+      render();
+      resolve(true);
+    };
+    img.onerror = () => { showToast('Could not load image'); resolve(false); };
+    img.src = dataUrl;
+  });
+}
+function loadCurrentProject() {
+  try {
+    const raw = localStorage.getItem(CURRENT_PROJECT_KEY);
+    if (!raw) return Promise.resolve(false);
+    const p = JSON.parse(raw);
+    state.shoeImageData = p.image;
+    state.layers = migrateLayers(p.layers || []);
+    state.activeLayerId = p.activeLayerId || state.layers[0]?.id;
+    state.activeRecentId = p.activeRecentId || null;
+    state.logos = (p.logos || []).map(l => { const obj={...l}; const img=new Image(); img.onload=()=>{obj.imgEl=img;render();}; img.src=l.data||''; return obj; });
+    state.texts = p.texts || [];
+    return loadImageFromData(p.image);
+  } catch { return Promise.resolve(false); }
+}
+
+// ---------- Recents (camera roll-style strip) ----------
+function loadRecents() {
+  try { state.recents = JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]'); }
+  catch { state.recents = []; }
+  renderRecents();
+}
+function saveRecents() {
+  try { localStorage.setItem(RECENTS_KEY, JSON.stringify(state.recents)); }
+  catch (e) {
+    // If full, drop oldest until it fits
+    while (state.recents.length > 1) {
+      state.recents.pop();
+      try { localStorage.setItem(RECENTS_KEY, JSON.stringify(state.recents)); break; }
+      catch {}
+    }
+  }
+}
+function addToRecents(dataUrl) {
+  const id = 'R' + Date.now().toString(36);
+  // Make a smaller thumbnail to save storage
+  const thumb = makeThumbnail(state.shoeImage, 200);
+  state.recents.unshift({ id, image: dataUrl, thumb, savedAt: Date.now() });
+  if (state.recents.length > 12) state.recents.length = 12;
+  state.activeRecentId = id;
+  saveRecents();
+  renderRecents();
+}
+function makeThumbnail(img, maxSize) {
+  const c = document.createElement('canvas');
+  const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+  c.width = img.width * ratio;
+  c.height = img.height * ratio;
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.7);
+}
+function renderRecents() {
+  if (state.recents.length === 0) {
+    recentsStrip.classList.add('empty');
+    recentsStrip.innerHTML = '';
+    return;
+  }
+  recentsStrip.classList.remove('empty');
+  let html = '';
+  state.recents.forEach(r => {
+    const active = r.id === state.activeRecentId ? 'active' : '';
+    html += `<div class="recent-thumb ${active}" data-id="${r.id}" style="background-image:url('${r.thumb || r.image}')">
+      <span class="x" data-del="${r.id}">×</span>
+    </div>`;
+  });
+  html += `<div class="recent-add" id="recentAdd">+</div>`;
+  recentsStrip.innerHTML = html;
+
+  recentsStrip.querySelectorAll('.recent-thumb').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.dataset.del) {
+        e.stopPropagation();
+        const id = e.target.dataset.del;
+        state.recents = state.recents.filter(r => r.id !== id);
+        if (state.activeRecentId === id) state.activeRecentId = null;
+        saveRecents(); renderRecents();
+        return;
+      }
+      const id = el.dataset.id;
+      const r = state.recents.find(x => x.id === id);
+      if (!r) return;
+      state.activeRecentId = id;
+      state.shoeImageData = r.image;
+      state.layers = []; setupDefaultLayers();
+      loadImageFromData(r.image).then(() => { saveProject(); renderRecents(); });
+    });
+  });
+  document.getElementById('recentAdd').addEventListener('click', () => fileInput.click());
+}
+
+// ---------- Capture methods ----------
+
+// 1. File / camera
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+  fileInput.value = '';
+});
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => importImage(e.target.result);
+  reader.readAsDataURL(file);
+}
+
+// 2. Paste from clipboard (button + global)
+async function pasteFromClipboard() {
+  try {
+    if (navigator.clipboard && navigator.clipboard.read) {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type);
+            const reader = new FileReader();
+            reader.onload = e => importImage(e.target.result);
+            reader.readAsDataURL(blob);
+            return;
+          }
+        }
+        // Maybe it's a URL on clipboard
+        if (item.types.includes('text/plain')) {
+          const blob = await item.getType('text/plain');
+          const text = await blob.text();
+          if (/^https?:\/\/.+\.(png|jpe?g|webp|gif)/i.test(text)) {
+            loadImageFromUrl(text);
+            return;
+          }
+        }
+      }
+      showToast('No image on clipboard');
+    } else {
+      showToast('Clipboard not supported · long-press to paste');
+    }
+  } catch (err) {
+    showToast('Allow clipboard access in browser settings');
+  }
+}
+
+// Listen for paste events globally (Ctrl+V on laptop, paste action on mobile)
+document.addEventListener('paste', e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        e.preventDefault();
+        handleFile(file);
+        return;
+      }
+    }
+  }
+  // Maybe pasted text is a URL
+  const text = e.clipboardData.getData('text');
+  if (text && /^https?:\/\/.+\.(png|jpe?g|webp|gif)/i.test(text)) {
+    e.preventDefault();
+    loadImageFromUrl(text);
+  }
+});
+
+// Auto-detect on focus (return-to-app trick)
+let lastClipboardCheck = 0;
+async function autoCheckClipboard() {
+  // Only on real user-driven focus, throttled
+  if (Date.now() - lastClipboardCheck < 1000) return;
+  lastClipboardCheck = Date.now();
+  if (!state.shoeImage && navigator.clipboard?.read) {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type);
+            const reader = new FileReader();
+            reader.onload = e => promptImportClipboard(e.target.result);
+            reader.readAsDataURL(blob);
+            return;
+          }
+        }
+      }
+    } catch {}
+  }
+}
+window.addEventListener('focus', autoCheckClipboard);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoCheckClipboard(); });
+
+function promptImportClipboard(dataUrl) {
+  modal.innerHTML = `
+    <h3>Import this image?</h3>
+    <p>Found an image on your clipboard.</p>
+    <img class="modal-img" src="${dataUrl}" alt="Clipboard preview" />
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" id="clipNo">Skip</button>
+      <button class="modal-btn primary" id="clipYes">Import</button>
+    </div>
+  `;
+  modalOverlay.classList.add('open');
+  document.getElementById('clipNo').onclick = () => modalOverlay.classList.remove('open');
+  document.getElementById('clipYes').onclick = () => {
+    modalOverlay.classList.remove('open');
+    importImage(dataUrl);
+  };
+}
+
+// 3. Load from URL
+function loadImageFromUrl(url) {
+  showToast('Fetching image...');
+  // Try to fetch as blob to avoid CORS canvas-tainting
+  fetch(url, { mode: 'cors' })
+    .then(r => r.blob())
+    .then(blob => {
+      const reader = new FileReader();
+      reader.onload = e => importImage(e.target.result);
+      reader.readAsDataURL(blob);
+    })
+    .catch(() => {
+      // Fallback: try direct image load (may taint canvas but at least shows it)
+      importImage(url);
+      showToast('Loaded · some sites may block download');
+    });
+}
+
+// 4. Web Share Target — handle ?url= or ?text= when launched from Share Sheet (Android)
+function handleSharedUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const url = params.get('url') || params.get('text');
+  if (url && /^https?:/.test(url)) {
+    loadImageFromUrl(url);
+    // Clean URL
+    history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+// Common image import path
+function importImage(dataUrl) {
+  state.shoeImageData = dataUrl;
+  loadImageFromData(dataUrl).then(ok => {
+    if (!ok) return;
+    if (state.layers.length === 0) setupDefaultLayers();
+    pushHistory();
+    saveProject();
+    addToRecents(dataUrl);
+    showToast('Shoe imported · 8 zones ready');
+  });
+}
+
+function enableTools() {
+  ['toolLayers','toolZones','toolColors','toolProjects','toolExport','toolLasso','toolLaces','toolLogos','toolTexts','toolLighting','toolAi'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('disabled');
+  });
+}
+
+// ---------- Saved projects ----------
+function listProjects() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveAsNamedProject(name) {
+  if (!state.shoeImageData) { showToast('Nothing to save'); return; }
+  const projects = listProjects();
+  const proj = {
+    id: 'P' + Date.now().toString(36),
+    name: name || `Shoe ${new Date().toLocaleDateString()}`,
+    image: state.shoeImageData,
+    layers: state.layers, activeLayerId: state.activeLayerId,
+    savedAt: Date.now()
+  };
+  projects.unshift(proj);
+  if (projects.length > 20) projects.length = 20;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); showToast('Project saved'); refreshPanelIfOpen(); }
+  catch { showToast('Storage full · delete old projects'); }
+}
+function loadNamedProject(id) {
+  const p = listProjects().find(x => x.id === id);
+  if (!p) return;
+  state.shoeImageData = p.image;
+  state.layers = migrateLayers(p.layers || []);
+  state.activeLayerId = p.activeLayerId || state.layers[0]?.id;
+  state.logos = (p.logos || []).map(l => { const obj={...l}; const img=new Image(); img.onload=()=>{obj.imgEl=img;render();}; img.src=l.data||''; return obj; });
+  state.texts = p.texts || [];
+  loadImageFromData(p.image).then(() => { closePanel(); showToast('Loaded: ' + p.name); saveProject(); });
+}
+function deleteNamedProject(id) {
+  const projects = listProjects().filter(p => p.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  refreshPanelIfOpen(); showToast('Deleted');
+}
+
+// ---------- Export PNG ----------
+function exportPNG() {
+  if (!state.shoeImage) { showToast('Capture a shoe first'); return; }
+  const out = document.createElement('canvas');
+  out.width = state.shoeImage.width; out.height = state.shoeImage.height;
+  const octx = out.getContext('2d');
+  octx.drawImage(state.shoeImage, 0, 0);
+  // Zones first
+  const zones = state.layers.filter(l => l.role !== 'laces');
+  const lacesLayer = state.layers.find(l => l.role === 'laces');
+  zones.forEach(layer => drawLayerShapes(octx, layer));
+  // Laces always on top
+  if (lacesLayer && lacesLayer.visible) {
+    if (lacesLayer.laceStyle === 'original' || !lacesLayer.laceStyle) {
+      drawLayerShapes(octx, lacesLayer);
+    } else if (lacesLayer.laceStyle !== 'none') {
+      // Temporarily set view.scale to 1 so the helper renders at native resolution
+      const savedScale = state.view.scale; state.view.scale = 1;
+      drawProceduralLaces(octx, lacesLayer);
+      state.view.scale = savedScale;
+    }
+  }
+  out.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `lacelayer-${Date.now()}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('PNG downloaded');
+  }, 'image/png');
+}
+
+// ---------- Panel ----------
+let currentPanel = null;
+function openPanel(which) {
+  currentPanel = which;
+  const map = { layers:renderLayersPanel, colors:renderColorsPanel, laces:renderLacesPanel, logos:renderLogosPanel, texts:renderTextsPanel, lighting:renderLightingPanel, ai:renderAiPanel, projects:renderProjectsPanel, export:renderExportPanel, settings:renderSettingsPanel, help:renderHelpPanel };
+  if (map[which]) map[which]();
+  panel.classList.add('open');
+  panelOverlay.classList.add('open');
+}
+function closePanel() {
+  panel.classList.remove('open');
+  panelOverlay.classList.remove('open');
+  currentPanel = null;
+}
+function refreshPanelIfOpen() { if (currentPanel) openPanel(currentPanel); }
+panelClose.addEventListener('click', closePanel);
+panelOverlay.addEventListener('click', closePanel);
+
+function renderLayersPanel() {
+  panelTitle.textContent = 'Layers';
+  let html = '';
+  state.layers.forEach(layer => {
+    const shapeCount = (layer.shapes || []).filter(s => s.points && s.points.length >= 3).length;
+    const meta = shapeCount === 0
+      ? 'No shapes yet'
+      : `${shapeCount} shape${shapeCount > 1 ? 's' : ''} · ${Math.round(layer.opacity * 100)}%`;
+    html += `
+      <div class="layer-row ${layer.id === state.activeLayerId ? 'active' : ''}" data-id="${layer.id}">
+        <div class="layer-swatch" style="background:${layer.color}"></div>
+        <div class="layer-info">
+          <div class="layer-name">${escapeHtml(layer.name)}</div>
+          <div class="layer-meta">${meta}</div>
+        </div>
+        <div class="layer-actions">
+          <button class="layer-btn ${layer.visible ? '' : 'hidden'}" data-act="vis" title="Show/hide">${layer.visible ? '👁' : '⊘'}</button>
+          <button class="layer-btn ${layer.locked ? 'locked' : ''}" data-act="lock" title="Lock">${layer.locked ? '🔒' : '🔓'}</button>
+          <button class="layer-btn" data-act="draw" title="Add shape">✏️</button>
+          <button class="layer-btn" data-act="clear" title="Clear all shapes in this layer">⊘</button>
+          <button class="layer-btn" data-act="del" title="Delete layer">🗑</button>
+        </div>
+      </div>`;
+  });
+  html += `<button class="add-layer-btn" id="addLayerBtn">+ Add Custom Layer</button>`;
+  panelBody.innerHTML = html;
+
+  panelBody.querySelectorAll('.layer-row').forEach(row => {
+    row.addEventListener('click', e => {
+      const id = row.dataset.id;
+      const btn = e.target.closest('button');
+      const act = btn?.dataset.act;
+      const layer = state.layers.find(l => l.id === id);
+      if (!act) { state.activeLayerId = id; refreshPanelIfOpen(); render(); return; }
+      if (act === 'vis') { layer.visible = !layer.visible; saveProject(); render(); refreshPanelIfOpen(); }
+      else if (act === 'lock') { layer.locked = !layer.locked; saveProject(); refreshPanelIfOpen(); }
+      else if (act === 'draw') {
+        if (layer.locked) { showToast('Layer is locked'); return; }
+        state.activeLayerId = id; closePanel(); setMode('draw');
+        const existing = (layer.shapes || []).length;
+        const msg = existing === 0
+          ? `Tap to draw ${layer.name}`
+          : `Adding shape #${existing + 1} to ${layer.name}`;
+        showToast(msg, 2500);
+      }
+      else if (act === 'clear') {
+        const count = (layer.shapes || []).length;
+        if (count === 0) { showToast('No shapes to clear'); return; }
+        if (confirm(`Clear all ${count} shape${count>1?'s':''} from "${layer.name}"? This won't delete the layer.`)) {
+          pushHistory();
+          layer.shapes = [];
+          saveProject(); render(); refreshPanelIfOpen();
+          showToast(`${layer.name} cleared`);
+        }
+      }
+      else if (act === 'del') { if (confirm(`Delete "${layer.name}" and all its shapes?`)) deleteLayer(id); }
+    });
+  });
+  document.getElementById('addLayerBtn').addEventListener('click', () => {
+    const name = prompt('Layer name:', 'Custom Zone');
+    if (name) { addLayer({ name, color: '#ff6b35' }); refreshPanelIfOpen(); }
+  });
+}
+
+function renderColorsPanel() {
+  const layer = getActiveLayer();
+  panelTitle.textContent = layer ? `Color · ${layer.name}` : 'Colors';
+  if (!layer) { panelBody.innerHTML = `<p style="color:#888;text-align:center;padding:24px;">Select a layer first</p>`; return; }
+  let html = `<div class="section-title">Color</div><div class="color-grid">`;
+  DEFAULT_PALETTE.forEach(c => {
+    html += `<div class="color-chip ${c.toLowerCase() === layer.color.toLowerCase() ? 'selected' : ''}" data-c="${c}" style="background:${c}"></div>`;
+  });
+  html += `</div>
+    <div class="custom-color">
+      <input type="color" id="customColor" value="${layer.color}" />
+      <label>Custom color</label>
+    </div>
+    <div class="section-title">Fill Style</div>
+    <div class="texture-grid">`;
+  TEXTURES.forEach(t => {
+    html += `<button class="texture-card ${(layer.fillType||'solid') === t ? 'active' : ''}" data-tex="${t}"><canvas class="texture-preview" data-texpr="${t}" width="80" height="44"></canvas><div class="texture-label">${t.charAt(0).toUpperCase()+t.slice(1)}</div></button>`;
+  });
+  html += `</div>
+    <div class="opacity-row">
+      <label><span>Opacity</span><span id="opVal">${Math.round(layer.opacity * 100)}%</span></label>
+      <input type="range" id="opSlider" min="0" max="100" value="${Math.round(layer.opacity * 100)}" />
+    </div>`;
+  panelBody.innerHTML = html;
+
+  // Render texture previews on mini canvases
+  panelBody.querySelectorAll('[data-texpr]').forEach(cv => {
+    const t = cv.dataset.texpr; const cx = cv.getContext('2d');
+    if (t === 'solid') { cx.fillStyle = layer.color; cx.fillRect(0,0,80,44); }
+    else { const pat = makeTexturePattern(cx, t, layer.color); cx.fillStyle = pat || layer.color; cx.fillRect(0,0,80,44); }
+  });
+
+  panelBody.querySelectorAll('.color-chip').forEach(chip => {
+    chip.addEventListener('click', () => { pushHistory(); layer.color = chip.dataset.c; saveProject(); render(); refreshPanelIfOpen(); });
+  });
+  document.getElementById('customColor').addEventListener('input', e => { layer.color = e.target.value; render(); });
+  document.getElementById('customColor').addEventListener('change', e => { pushHistory(); layer.color = e.target.value; saveProject(); refreshPanelIfOpen(); });
+  panelBody.querySelectorAll('.texture-card').forEach(card => {
+    card.addEventListener('click', () => { pushHistory(); layer.fillType = card.dataset.tex; saveProject(); render(); refreshPanelIfOpen(); });
+  });
+  const op = document.getElementById('opSlider');
+  op.addEventListener('input', e => { layer.opacity = parseInt(e.target.value) / 100; document.getElementById('opVal').textContent = e.target.value + '%'; render(); });
+  op.addEventListener('change', () => { pushHistory(); saveProject(); });
+}
+
+function renderLacesPanel() {
+  panelTitle.textContent = '🪢 Lace Editor';
+  const laces = getLacesLayer();
+  if (!laces) {
+    panelBody.innerHTML = `<p style="color:#888;text-align:center;padding:24px;">No Laces layer found.</p>`;
+    return;
+  }
+  const styles = [
+    { id: 'original',   label: 'Original',     desc: 'Recolor the photo\'s laces (use Draw Zone first)' },
+    { id: 'flat',       label: 'Flat',         desc: 'Wide ribbon laces' },
+    { id: 'round',      label: 'Round',        desc: 'Athletic round laces' },
+    { id: 'rope',       label: 'Rope',         desc: 'Twisted rope-style laces' },
+    { id: 'reflective', label: 'Reflective',   desc: 'Mirror-finish high-vis laces' },
+    { id: 'none',       label: 'No Laces',     desc: 'Hide laces completely' }
+  ];
+  const eyeletCount = (laces.laceEyelets || []).length;
+  const pairs = Math.floor(eyeletCount / 2);
+  const isProcedural = laces.laceStyle && laces.laceStyle !== 'original' && laces.laceStyle !== 'none';
+
+  let html = `
+    <div class="lace-style-grid">
+  `;
+  styles.forEach(s => {
+    const active = (laces.laceStyle || 'original') === s.id ? 'active' : '';
+    html += `
+      <button class="lace-style-card ${active}" data-style="${s.id}">
+        <div class="lace-style-preview" data-prev="${s.id}"></div>
+        <div class="lace-style-label">${s.label}</div>
+        <div class="lace-style-desc">${s.desc}</div>
+      </button>
+    `;
+  });
+  html += `</div>`;
+
+  if (isProcedural) {
+    html += `
+      <div class="lace-section">
+        <div class="lace-section-title">Eyelets <span class="lace-count">${pairs} pair${pairs!==1?'s':''} placed</span></div>
+        <p class="lace-help">Tap LEFT and RIGHT eyelets in pairs, top of shoe to bottom. Tap an existing eyelet to remove it.</p>
+        <div class="lace-buttons">
+          <button class="lace-action-btn primary" id="placeEyelets">📍 ${eyeletCount === 0 ? 'Place Eyelets' : 'Add More Eyelets'}</button>
+          ${eyeletCount > 0 ? `<button class="lace-action-btn" id="clearEyelets">⊘ Clear All</button>` : ''}
+        </div>
+      </div>
+
+      <div class="lace-section">
+        <div class="lace-section-title">Lace Color</div>
+        <div class="color-grid">
+    `;
+    DEFAULT_PALETTE.forEach(c => {
+      html += `<div class="color-chip ${c.toLowerCase() === (laces.laceColor || '#fff').toLowerCase() ? 'selected' : ''}" data-lc="${c}" style="background:${c}"></div>`;
+    });
+    html += `</div>
+        <div class="custom-color">
+          <input type="color" id="laceCustomColor" value="${laces.laceColor || '#ffffff'}" />
+          <label>Custom lace color</label>
+        </div>
+      </div>
+
+      <div class="lace-section">
+        <div class="opacity-row">
+          <label><span>Lace Thickness</span><span id="thickVal">${laces.laceThickness}px</span></label>
+          <input type="range" id="thickSlider" min="2" max="30" value="${laces.laceThickness}" />
+        </div>
+      </div>
+    `;
+  } else if (laces.laceStyle === 'original') {
+    html += `
+      <div class="lace-section">
+        <p class="lace-help">
+          "Original" mode keeps the photo's existing laces. Use the <b>Layers</b> panel
+          to draw a zone over the laces and recolor them like any other zone.
+        </p>
+      </div>
+    `;
+  } else if (laces.laceStyle === 'none') {
+    html += `
+      <div class="lace-section">
+        <p class="lace-help">Laces are hidden. The shoe shows without any lace overlay.</p>
+      </div>
+    `;
+  }
+
+  panelBody.innerHTML = html;
+
+  // Render style previews
+  styles.forEach(s => {
+    const prev = panelBody.querySelector(`[data-prev="${s.id}"]`);
+    if (!prev) return;
+    const c = document.createElement('canvas');
+    c.width = 80; c.height = 40;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#222';
+    cx.fillRect(0, 0, 80, 40);
+    if (s.id === 'none') {
+      cx.fillStyle = '#666'; cx.font = '20px sans-serif';
+      cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText('—', 40, 20);
+    } else if (s.id === 'original') {
+      cx.fillStyle = '#888'; cx.font = '10px sans-serif';
+      cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText('photo', 40, 20);
+    } else {
+      // Mini lace preview
+      const fakeLayer = {
+        laceColor: laces.laceColor || '#ffffff',
+        laceThickness: 5,
+        laceStyle: s.id,
+        opacity: 1,
+        laceEyelets: [
+          { x: 18, y: 6 }, { x: 62, y: 6 },
+          { x: 18, y: 20 }, { x: 62, y: 20 },
+          { x: 18, y: 34 }, { x: 62, y: 34 }
+        ]
+      };
+      // Save state.view temporarily so the helper renders correctly at 1x
+      const savedScale = state.view.scale; state.view.scale = 1;
+      drawProceduralLaces(cx, fakeLayer);
+      state.view.scale = savedScale;
+    }
+    prev.appendChild(c);
+  });
+
+  // Wire up style cards
+  panelBody.querySelectorAll('.lace-style-card').forEach(card => {
+    card.addEventListener('click', () => {
+      pushHistory();
+      laces.laceStyle = card.dataset.style;
+      saveProject(); render(); refreshPanelIfOpen();
+    });
+  });
+
+  // Eyelet buttons
+  const placeBtn = document.getElementById('placeEyelets');
+  if (placeBtn) {
+    placeBtn.addEventListener('click', () => {
+      state.activeLayerId = laces.id;
+      closePanel();
+      setMode('eyelets');
+      showToast('Tap LEFT then RIGHT eyelet for each lace pair', 3000);
+    });
+  }
+  const clearBtn = document.getElementById('clearEyelets');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm(`Clear all ${pairs} eyelet pair${pairs!==1?'s':''}?`)) clearEyelets();
+    });
+  }
+
+  // Color chips
+  panelBody.querySelectorAll('[data-lc]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      pushHistory();
+      laces.laceColor = chip.dataset.lc;
+      saveProject(); render(); refreshPanelIfOpen();
+    });
+  });
+  const lcc = document.getElementById('laceCustomColor');
+  if (lcc) {
+    lcc.addEventListener('input', e => { laces.laceColor = e.target.value; render(); });
+    lcc.addEventListener('change', e => { pushHistory(); laces.laceColor = e.target.value; saveProject(); refreshPanelIfOpen(); });
+  }
+
+  // Thickness slider
+  const thick = document.getElementById('thickSlider');
+  if (thick) {
+    thick.addEventListener('input', e => {
+      laces.laceThickness = parseInt(e.target.value);
+      document.getElementById('thickVal').textContent = e.target.value + 'px';
+      render();
+    });
+    thick.addEventListener('change', () => { pushHistory(); saveProject(); });
+  }
+}
+
+function renderProjectsPanel() {
+  panelTitle.textContent = 'Saved Projects';
+  const projects = listProjects();
+  let html = `<button class="add-layer-btn" id="saveCurrentBtn" style="margin-bottom:16px;">💾 Save Current</button>`;
+  if (projects.length === 0) html += `<p style="color:#888;text-align:center;padding:24px;">No saved projects yet</p>`;
+  else projects.forEach(p => {
+    html += `
+      <div class="project-row">
+        <div class="project-thumb" style="background-image:url('${p.image}')"></div>
+        <div class="project-info">
+          <div class="project-name">${escapeHtml(p.name)}</div>
+          <div class="project-date">${new Date(p.savedAt).toLocaleString()} · ${p.layers.length} layers</div>
+        </div>
+        <div class="layer-actions">
+          <button class="layer-btn" data-load="${p.id}">📂</button>
+          <button class="layer-btn" data-del="${p.id}">🗑</button>
+        </div>
+      </div>`;
+  });
+  panelBody.innerHTML = html;
+
+  document.getElementById('saveCurrentBtn').addEventListener('click', () => {
+    const name = prompt('Project name:', `Shoe ${new Date().toLocaleDateString()}`);
+    if (name) saveAsNamedProject(name);
+  });
+  panelBody.querySelectorAll('[data-load]').forEach(b => b.addEventListener('click', () => loadNamedProject(b.dataset.load)));
+  panelBody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    if (confirm('Delete this project?')) deleteNamedProject(b.dataset.del);
+  }));
+}
+
+function renderExportPanel() {
+  panelTitle.textContent = 'Export';
+  panelBody.innerHTML = `
+    <div class="export-card" id="expFlat"><div class="export-icon">🖼</div><div class="export-info"><div class="export-title">Flat PNG</div><div class="export-desc">Shoe + all visible zones, laces, logos and text. Ready for sharing.</div></div></div>
+    <div class="export-card" id="expTransp"><div class="export-icon">✂️</div><div class="export-info"><div class="export-title">Transparent PNG</div><div class="export-desc">Design only — no shoe background. For Photoshop, presentations, socials.</div></div></div>
+    <div class="export-card" id="expSheet"><div class="export-icon">📋</div><div class="export-info"><div class="export-title">Design Sheet</div><div class="export-desc">Formatted 1200×700 image: shoe mockup + zone color swatches. Send to a manufacturer or friend.</div></div></div>
+    <div class="export-card" id="expJson"><div class="export-icon">📄</div><div class="export-info"><div class="export-title">Handoff JSON</div><div class="export-desc">Structured data: zones, colors, lace specs, text, logos. For developers or production handoff.</div></div></div>
+  `;
+  document.getElementById('expFlat').addEventListener('click', () => { exportFlatPNG(); setTimeout(closePanel, 600); });
+  document.getElementById('expTransp').addEventListener('click', () => { exportTransparentPNG(); setTimeout(closePanel, 600); });
+  document.getElementById('expSheet').addEventListener('click', () => { exportDesignSheet(); setTimeout(closePanel, 600); });
+  document.getElementById('expJson').addEventListener('click', () => { exportDesignJSON(); setTimeout(closePanel, 600); });
+}
+
+function renderLogosPanel() {
+  panelTitle.textContent = '🏷 Logos & Images';
+  let html = `<button class="add-layer-btn" id="addLogoBtn" style="margin-bottom:16px">📁 Upload Image or Logo</button>`;
+  if (state.logos.length === 0) html += `<p style="color:#888;font-size:13px;text-align:center;padding:20px">No logos yet. Upload a PNG, JPG or SVG.</p>`;
+  state.logos.forEach((logo, i) => {
+    html += `<div class="layer-row ${logo.id === state.activeLogoId ? 'active' : ''}" data-lid="${logo.id}">
+      <div class="layer-swatch" style="background:#222;background-image:url('${logo.data}');background-size:contain;background-repeat:no-repeat;background-position:center"></div>
+      <div class="layer-info"><div class="layer-name">Logo ${i+1}</div><div class="layer-meta">${Math.round(logo.w)}×${Math.round(logo.h)}px · ${Math.round((logo.opacity??1)*100)}%</div></div>
+      <div class="layer-actions">
+        <button class="layer-btn ${logo.hidden?'hidden':''}" data-lact="vis">${logo.hidden?'⊘':'👁'}</button>
+        <button class="layer-btn" data-lact="del">🗑</button>
+      </div></div>`;
+    if (logo.id === state.activeLogoId) {
+      html += `<div style="padding:8px 4px 4px">
+        <div class="opacity-row"><label><span>Size</span><span id="logoSzVal">${Math.round(logo.w)}px</span></label><input type="range" id="logoSz" min="20" max="${state.shoeImage?Math.round(state.shoeImage.width*0.9):800}" value="${Math.round(logo.w)}"/></div>
+        <div class="opacity-row" style="margin-top:8px"><label><span>Opacity</span><span id="logoOpVal">${Math.round((logo.opacity??1)*100)}%</span></label><input type="range" id="logoOp" min="0" max="100" value="${Math.round((logo.opacity??1)*100)}"/></div>
+        <div class="opacity-row" style="margin-top:8px"><label><span>Rotate</span><span id="logoRotVal">${logo.rot||0}°</span></label><input type="range" id="logoRot" min="-180" max="180" value="${logo.rot||0}"/></div>
+      </div>`;
+    }
+  });
+  panelBody.innerHTML = html;
+  document.getElementById('addLogoBtn').addEventListener('click', () => logoFileInput.click());
+  panelBody.querySelectorAll('[data-lid]').forEach(row => {
+    row.addEventListener('click', e => {
+      const id = row.dataset.lid; const btn = e.target.closest('button'); const act = btn?.dataset.lact;
+      const logo = state.logos.find(l => l.id === id);
+      if (!act) { state.activeLogoId = id; refreshPanelIfOpen(); render(); return; }
+      if (act === 'vis') { logo.hidden = !logo.hidden; saveProject(); render(); refreshPanelIfOpen(); }
+      else if (act === 'del') { if (confirm('Delete this logo?')) deleteLogo(id); }
+    });
+  });
+  const logo = state.logos.find(l => l.id === state.activeLogoId);
+  if (logo) {
+    const szEl = document.getElementById('logoSz'); if (szEl) { szEl.addEventListener('input', e => { const ratio=logo.h/logo.w; logo.w=parseInt(e.target.value); logo.h=logo.w*ratio; document.getElementById('logoSzVal').textContent=Math.round(logo.w)+'px'; render(); }); szEl.addEventListener('change', () => { pushHistory(); saveProject(); }); }
+    const opEl = document.getElementById('logoOp'); if (opEl) { opEl.addEventListener('input', e => { logo.opacity=parseInt(e.target.value)/100; document.getElementById('logoOpVal').textContent=e.target.value+'%'; render(); }); opEl.addEventListener('change', () => { pushHistory(); saveProject(); }); }
+    const rotEl = document.getElementById('logoRot'); if (rotEl) { rotEl.addEventListener('input', e => { logo.rot=parseInt(e.target.value); document.getElementById('logoRotVal').textContent=e.target.value+'°'; render(); }); rotEl.addEventListener('change', () => { pushHistory(); saveProject(); }); }
+  }
+}
+
+function renderTextsPanel() {
+  panelTitle.textContent = 'T Text Tool';
+  let html = `<div style="display:flex;gap:8px;margin-bottom:16px"><input class="settings-input" id="newTextInput" placeholder="Type text..." style="flex:1;-webkit-user-select:text;user-select:text"/><button class="url-go" id="addTextBtn">Add</button></div>`;
+  if (state.texts.length === 0) html += `<p style="color:#888;font-size:13px;text-align:center;padding:20px">No text yet. Type above and tap Add.</p>`;
+  state.texts.forEach(t => {
+    html += `<div class="layer-row ${t.id === state.activeTextId ? 'active' : ''}" data-tid="${t.id}">
+      <div class="layer-swatch" style="background:${t.color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.6)">T</div>
+      <div class="layer-info"><div class="layer-name">${escapeHtml(t.text)}</div><div class="layer-meta">${t.fontSize}px · ${t.fontFamily}</div></div>
+      <div class="layer-actions">
+        <button class="layer-btn ${t.hidden?'hidden':''}" data-tact="vis">${t.hidden?'⊘':'👁'}</button>
+        <button class="layer-btn" data-tact="del">🗑</button>
+      </div></div>`;
+    if (t.id === state.activeTextId) {
+      html += `<div style="padding:8px 4px 4px">
+        <div class="section-title">Color</div><div class="color-grid" id="textColorGrid">`;
+      DEFAULT_PALETTE.forEach(c => { html += `<div class="color-chip ${c.toLowerCase() === t.color.toLowerCase() ? 'selected' : ''}" data-tc="${c}" style="background:${c}"></div>`; });
+      html += `</div>
+        <div class="opacity-row"><label><span>Size</span><span id="txtSzVal">${t.fontSize}px</span></label><input type="range" id="txtSz" min="12" max="300" value="${t.fontSize}"/></div>
+        <div class="section-title" style="margin-top:12px">Font</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">`;
+      FONTS.forEach(f => { html += `<button style="padding:6px 10px;border-radius:8px;border:1px solid ${t.fontFamily===f?'#ff8c42':'rgba(255,255,255,0.1)'};background:${t.fontFamily===f?'rgba(255,140,66,0.15)':'transparent'};color:#f5f5f5;font:12px ${f};cursor:pointer" data-tf="${f}">${f.split(' ')[0]}</button>`; });
+      html += `</div>
+        <div class="opacity-row"><label><span>Rotate</span><span id="txtRotVal">${t.rot||0}°</span></label><input type="range" id="txtRot" min="-180" max="180" value="${t.rot||0}"/></div>
+      </div>`;
+    }
+  });
+  panelBody.innerHTML = html;
+  document.getElementById('addTextBtn').addEventListener('click', () => { const v = document.getElementById('newTextInput').value; if (v.trim()) { addText(v.trim()); refreshPanelIfOpen(); } });
+  document.getElementById('newTextInput').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value; if (v.trim()) { addText(v.trim()); refreshPanelIfOpen(); } } });
+  panelBody.querySelectorAll('[data-tid]').forEach(row => {
+    row.addEventListener('click', e => {
+      const id = row.dataset.tid; const btn = e.target.closest('button'); const act = btn?.dataset.tact;
+      const t = state.texts.find(x => x.id === id);
+      if (!act) { state.activeTextId = id; refreshPanelIfOpen(); render(); return; }
+      if (act === 'vis') { t.hidden = !t.hidden; saveProject(); render(); refreshPanelIfOpen(); }
+      else if (act === 'del') { if (confirm('Delete text?')) deleteText(id); }
+    });
+  });
+  const at = state.texts.find(t => t.id === state.activeTextId);
+  if (at) {
+    panelBody.querySelectorAll('[data-tc]').forEach(chip => { chip.addEventListener('click', () => { pushHistory(); at.color = chip.dataset.tc; saveProject(); render(); refreshPanelIfOpen(); }); });
+    const szEl = document.getElementById('txtSz'); if (szEl) { szEl.addEventListener('input', e => { at.fontSize=parseInt(e.target.value); document.getElementById('txtSzVal').textContent=e.target.value+'px'; render(); }); szEl.addEventListener('change', () => { pushHistory(); saveProject(); }); }
+    const rotEl = document.getElementById('txtRot'); if (rotEl) { rotEl.addEventListener('input', e => { at.rot=parseInt(e.target.value); document.getElementById('txtRotVal').textContent=e.target.value+'°'; render(); }); rotEl.addEventListener('change', () => { pushHistory(); saveProject(); }); }
+    panelBody.querySelectorAll('[data-tf]').forEach(btn => { btn.addEventListener('click', () => { pushHistory(); at.fontFamily=btn.dataset.tf; saveProject(); render(); refreshPanelIfOpen(); }); });
+  }
+}
+
+function renderLightingPanel() {
+  panelTitle.textContent = '💡 Lighting';
+  const shadowL = state.layers.find(l => l.role === 'shadows');
+  const hlL = state.layers.find(l => l.role === 'highlights');
+  panelBody.innerHTML = `
+    <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:16px">Draw shadow and highlight shapes on the shoe to give it real 3D depth. They blend over all your zone colors automatically.<br><br><b style="color:#ff8c42">Shadows</b> = multiply blend (darkens).<br><b style="color:#ff8c42">Highlights</b> = screen blend (brightens).</p>
+    ${shadowL ? `<div class="section-title">Shadow Layer</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="lace-action-btn primary" id="drawShadow">✏️ Draw Shadow</button>
+      <button class="lace-action-btn" id="clearShadow">⊘ Clear</button>
+    </div>
+    <div class="opacity-row"><label><span>Shadow Strength</span><span id="shadowOpVal">${Math.round((shadowL.opacity||0.35)*100)}%</span></label><input type="range" id="shadowOp" min="0" max="100" value="${Math.round((shadowL.opacity||0.35)*100)}"/></div>` : ''}
+    ${hlL ? `<div class="section-title" style="margin-top:20px">Highlight Layer</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="lace-action-btn primary" id="drawHighlight">✏️ Draw Highlight</button>
+      <button class="lace-action-btn" id="clearHighlight">⊘ Clear</button>
+    </div>
+    <div class="opacity-row"><label><span>Highlight Strength</span><span id="hlOpVal">${Math.round((hlL.opacity||0.25)*100)}%</span></label><input type="range" id="hlOp" min="0" max="100" value="${Math.round((hlL.opacity||0.25)*100)}"/></div>` : ''}
+  `;
+  if (shadowL) {
+    document.getElementById('drawShadow').addEventListener('click', () => { state.activeLayerId=shadowL.id; closePanel(); setMode('draw'); showToast('Draw shadow areas — darker regions of the shoe',2500); });
+    document.getElementById('clearShadow').addEventListener('click', () => { pushHistory(); shadowL.shapes=[]; saveProject(); render(); showToast('Shadows cleared'); });
+    const op = document.getElementById('shadowOp'); op.addEventListener('input', e => { shadowL.opacity=parseInt(e.target.value)/100; document.getElementById('shadowOpVal').textContent=e.target.value+'%'; render(); }); op.addEventListener('change', () => { pushHistory(); saveProject(); });
+  }
+  if (hlL) {
+    document.getElementById('drawHighlight').addEventListener('click', () => { state.activeLayerId=hlL.id; closePanel(); setMode('draw'); showToast('Draw highlight areas — bright reflections on the shoe',2500); });
+    document.getElementById('clearHighlight').addEventListener('click', () => { pushHistory(); hlL.shapes=[]; saveProject(); render(); showToast('Highlights cleared'); });
+    const op = document.getElementById('hlOp'); op.addEventListener('input', e => { hlL.opacity=parseInt(e.target.value)/100; document.getElementById('hlOpVal').textContent=e.target.value+'%'; render(); }); op.addEventListener('change', () => { pushHistory(); saveProject(); });
+  }
+}
+
+function renderAiPanel() {
+  panelTitle.textContent = '🤖 AI Auto-Zones';
+  const hasKey = !!settings.anthropicKey;
+  panelBody.innerHTML = `
+    <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:16px">Auto-detect shoe parts and pre-fill zones. Choose a method:</p>
+    <div class="export-card" id="aiEdge">
+      <div class="export-icon">🔍</div>
+      <div class="export-info"><div class="export-title">Edge Detect (Offline)</div><div class="export-desc">Places rough starter zones based on typical shoe anatomy. Works offline, instant. Refine with ✏️ Draw.</div></div>
+    </div>
+    <div class="export-card" id="aiVision" style="${hasKey ? '' : 'opacity:0.6'}">
+      <div class="export-icon">🤖</div>
+      <div class="export-info"><div class="export-title">Claude Vision AI${hasKey ? '' : ' — needs API key'}</div><div class="export-desc">Sends shoe image to Claude AI. Returns accurate polygon zones for each part. Requires a free Anthropic API key.</div></div>
+    </div>
+    ${!hasKey ? `<p style="font-size:12px;color:#ff8c42;margin-top:10px;line-height:1.5">⚙ Paste your Anthropic API key in <b>Settings</b> to unlock AI Vision. Free tier at console.anthropic.com is enough.</p>` : ''}
+    <button class="add-layer-btn" style="margin-top:16px" id="goSettingsAi">⚙ Open Settings</button>
+  `;
+  document.getElementById('aiEdge').addEventListener('click', () => { closePanel(); runEdgeAutoZones(); });
+  document.getElementById('aiVision').addEventListener('click', () => { closePanel(); runAiAutoZones(); });
+  document.getElementById('goSettingsAi').addEventListener('click', () => openPanel('settings'));
+}
+
+function renderSettingsPanel() {
+  panelTitle.textContent = '⚙ Settings';
+  let usedBytes = 0;
+  try { for (let k in localStorage) if (k.startsWith('lls')) usedBytes += localStorage[k].length * 2; } catch {}
+  panelBody.innerHTML = `
+    <div class="section-title">AI Vision (Build 7)</div>
+    <p style="font-size:13px;color:#aaa;line-height:1.5;margin-bottom:10px">Optional: paste your Anthropic API key to enable AI auto-zone detection. Stored only on this device.</p>
+    <div class="settings-row">
+      <label>Anthropic API Key</label>
+      <input class="settings-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." value="${settings.anthropicKey || ''}" style="-webkit-user-select:text;user-select:text"/>
+    </div>
+    <button class="add-layer-btn" id="saveSettingsBtn">Save Settings</button>
+    <p style="font-size:11px;color:#666;margin-top:10px;line-height:1.5">Get a free key at <b>console.anthropic.com</b> · Free tier is enough.</p>
+    <div class="section-title" style="margin-top:24px">Storage</div>
+    <p style="font-size:13px;color:#aaa">Using ~${(usedBytes/1024/1024).toFixed(1)} MB of browser storage</p>
+    <button class="lace-action-btn" id="clearStorageBtn" style="margin-top:8px;color:#ef476f;border-color:rgba(239,71,111,0.4)">⚠ Clear All Saved Data</button>
+  `;
+  document.getElementById('saveSettingsBtn').addEventListener('click', () => { settings.anthropicKey = document.getElementById('apiKeyInput').value.trim(); saveSettings(); showToast('Settings saved'); });
+  document.getElementById('clearStorageBtn').addEventListener('click', () => { if (confirm('Delete ALL saved projects and data? This cannot be undone.')) { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(CURRENT_PROJECT_KEY); localStorage.removeItem(RECENTS_KEY); state.recents=[]; renderRecents(); showToast('All data cleared'); } });
+}
+
+function renderHelpPanel() {
+  panelTitle.textContent = 'How to Use';
+  panelBody.innerHTML = `
+    <div class="help-section"><h3>1. Capture a Shoe</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Camera/Photos · Paste (long-press → Copy → tap Paste) · URL link · Screenshot + Lasso. Returns to app auto-detects clipboard image.</p></div>
+    <div class="help-section"><h3>2. Crop with Lasso ✂️</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Tap <b>Lasso</b> · circle shoe with finger or Pencil · lift to confirm. Zones reset so you start fresh on the cropped shoe.</p></div>
+    <div class="help-section"><h3>3. Auto-Zones 🤖</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Tap <b>AI Zones</b>. Edge Detect is instant + offline. Claude Vision AI gives accurate polygons (needs free API key in Settings).</p></div>
+    <div class="help-section"><h3>4. Draw Zones ✏️</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Layers panel → tap ✏️ on any zone → tap points around the part → tap first point (or Space) to close. Tap ✏️ again = add shape 2, 3… Lock 🔒 when done.</p></div>
+    <div class="help-section"><h3>5. Colors &amp; Textures 🎨</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Pick color + fill: Solid, Leather, Suede, Mesh, or Camo. Adjust opacity with slider.</p></div>
+    <div class="help-section"><h3>6. Laces 🪢</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Pick style → Place Eyelets → tap LEFT then RIGHT pairs top-to-bottom. Laces always render on top.</p></div>
+    <div class="help-section"><h3>7. Logos &amp; Text</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Upload a PNG/SVG logo. Drag to position, resize with slider. Add text with any font. Drag to reposition.</p></div>
+    <div class="help-section"><h3>8. Lighting 💡</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Draw shadow zones (multiply blend) and highlight zones (screen blend) for real 3D depth.</p></div>
+    <div class="help-section"><h3>9. Export ⬇</h3><p style="font-size:13px;color:#ccc;line-height:1.6">Flat PNG · Transparent PNG · Design Sheet · Handoff JSON.</p></div>
+    <div class="help-section"><h3>Keyboard (Laptop)</h3>
+      <div class="help-row"><span>Undo / Redo</span><span class="help-key">Ctrl+Z / Ctrl+Y</span></div>
+      <div class="help-row"><span>Finish zone</span><span class="help-key">Space</span></div>
+      <div class="help-row"><span>Cancel / close</span><span class="help-key">Esc</span></div>
+      <div class="help-row"><span>Zoom</span><span class="help-key">Scroll wheel</span></div>
+      <div class="help-row"><span>Drop image</span><span class="help-key">Drag onto canvas</span></div>
+      <div class="help-row"><span>Paste image</span><span class="help-key">Ctrl+V</span></div>
+      <div class="help-row"><span>Reset view</span><span class="help-key">0</span></div>
+    </div>
+    <div class="help-section"><h3>iPhone Tips</h3><p style="font-size:12px;color:#888;line-height:1.6">· Add to Home Screen: Share → Add to Home Screen<br>· Use Apple Pencil for precise Lasso cropping<br>· Long-press image → Copy → return → auto-imports</p></div>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Toolbar wiring ----------
+document.querySelectorAll('.tool').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const action = btn.dataset.action;
+    if (action === 'capture') {
+      // Show empty state with capture options if not loaded, else file picker
+      if (!state.shoeImage) { return; } // already showing empty state
+      fileInput.click();
+    }
+    else if (action === 'lasso') {
+      if (state.mode === 'lasso') { setMode('view'); }
+      else { setMode('lasso'); showToast('Circle around the shoe to crop', 2500); }
+    }
+    else if (action === 'laces') {
+      if (state.mode === 'eyelets') { finishEyelets(); }
+      else openPanel('laces');
+    }
+    else if (action === 'zones') {
+      const l = getActiveLayer();
+      if (!l) { showToast('Select a layer first'); openPanel('layers'); return; }
+      if (l.locked) { showToast('Layer is locked'); return; }
+      if (state.mode === 'draw') cancelDrawing();
+      else { setMode('draw'); showToast(`Drawing ${l.name}`, 2000); }
+    }
+    else if (action === 'logos') openPanel('logos');
+    else if (action === 'texts') openPanel('texts');
+    else if (action === 'lighting') openPanel('lighting');
+    else if (action === 'ai') openPanel('ai');
+    else openPanel(action);
+  });
+});
+
+// Empty state buttons
+document.getElementById('capCamera').addEventListener('click', () => fileInput.click());
+document.getElementById('capPaste').addEventListener('click', pasteFromClipboard);
+document.getElementById('capScreen').addEventListener('click', () => fileInput.click());
+document.getElementById('capUrl').addEventListener('click', () => {
+  const wrap = document.getElementById('urlInputWrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'flex' : 'none';
+  if (wrap.style.display === 'flex') document.getElementById('urlInput').focus();
+});
+document.getElementById('urlGo').addEventListener('click', () => {
+  const url = document.getElementById('urlInput').value.trim();
+  if (url) loadImageFromUrl(url);
+});
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('urlGo').click();
+});
+
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnRedo').addEventListener('click', redo);
+document.getElementById('btnHelp').addEventListener('click', () => openPanel('help'));
+document.getElementById('btnSettings').addEventListener('click', () => openPanel('settings'));
+
+// Enlarge controls
+document.getElementById('btnZoomIn').addEventListener('click', () => zoomBy(1.4));
+document.getElementById('btnZoomOut').addEventListener('click', () => zoomBy(0.7));
+document.getElementById('btnFit').addEventListener('click', resetView);
+
+// ---------- Keyboard shortcuts ----------
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') {
+    if (state.mode !== 'view') cancelDrawing();
+    else if (currentPanel) closePanel();
+    else if (modalOverlay.classList.contains('open')) modalOverlay.classList.remove('open');
+  }
+  else if (e.key === ' ' && (state.mode === 'draw' || state.mode === 'eyelets')) {
+    e.preventDefault();
+    if (state.mode === 'draw') finishDrawing();
+    else if (state.mode === 'eyelets') finishEyelets();
+  }
+  else if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+  else if (((e.key === 'y' || e.key === 'Y') && (e.ctrlKey || e.metaKey)) || ((e.key === 'z' || e.key === 'Z') && e.shiftKey && (e.ctrlKey || e.metaKey))) { e.preventDefault(); redo(); }
+  else if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey && !e.ctrlKey && !e.metaKey) { undo(); }
+  else if ((e.key === 'y' || e.key === 'Y') && !e.ctrlKey && !e.metaKey) { redo(); }
+  else if (e.key === '0' && !e.ctrlKey && !e.metaKey) { resetView(); }
+});
+
+// ===== Build 4: Texture helpers =====
+function makeTexturePattern(c, texType, color) {
+  const sz = 64, tc = document.createElement('canvas'); tc.width = sz; tc.height = sz;
+  const tx = tc.getContext('2d');
+  tx.fillStyle = color; tx.fillRect(0, 0, sz, sz);
+  if (texType === 'leather') {
+    tx.strokeStyle = darkenHex(color, 0.15); tx.lineWidth = 1;
+    for (let i = 0; i < sz; i += 8) { tx.beginPath(); tx.moveTo(i, 0); tx.lineTo(i, sz); tx.stroke(); tx.beginPath(); tx.moveTo(0, i); tx.lineTo(sz, i); tx.stroke(); }
+    tx.strokeStyle = lightenHex(color, 0.1); tx.lineWidth = 0.5;
+    for (let i = 4; i < sz; i += 8) { tx.beginPath(); tx.moveTo(i, 0); tx.lineTo(i, sz); tx.stroke(); }
+  } else if (texType === 'suede') {
+    for (let i = 0; i < 400; i++) { const x = Math.random()*sz, y = Math.random()*sz, r = Math.random()*1.5+0.5; tx.beginPath(); tx.arc(x, y, r, 0, Math.PI*2); tx.fillStyle = Math.random() > 0.5 ? darkenHex(color, 0.1) : lightenHex(color, 0.08); tx.fill(); }
+  } else if (texType === 'mesh') {
+    tx.clearRect(0, 0, sz, sz);
+    const hex = 12;
+    for (let row = 0; row < 6; row++) { for (let col = 0; col < 6; col++) {
+      const cx = col*hex*1.5 + (row%2 ? hex*0.75 : 0), cy = row*hex*0.87;
+      tx.beginPath();
+      for (let a = 0; a < 6; a++) { const ang = Math.PI/180*(60*a-30); const hx = cx+hex*0.5*Math.cos(ang), hy = cy+hex*0.5*Math.sin(ang); a===0 ? tx.moveTo(hx,hy) : tx.lineTo(hx,hy); }
+      tx.closePath(); tx.strokeStyle = color; tx.lineWidth = 1.5; tx.stroke();
+    }}
+  } else if (texType === 'camo') {
+    const cols = [color, darkenHex(color, 0.3), '#556b2f', '#3b3b1a'];
+    for (let i = 0; i < 20; i++) { const x=Math.random()*sz, y=Math.random()*sz, rx=Math.random()*16+8, ry=Math.random()*10+5; tx.beginPath(); tx.ellipse(x,y,rx,ry,Math.random()*Math.PI,0,Math.PI*2); tx.fillStyle = cols[Math.floor(Math.random()*cols.length)]; tx.fill(); }
+  }
+  return c.createPattern(tc, 'repeat');
+}
+
+// Patch drawLayerShapes to support fillType textures
+const _origDrawLayerShapes = drawLayerShapes;
+function drawLayerShapes(c, layer) {
+  if (!layer.visible || !layer.shapes || layer.shapes.length === 0) return;
+  layer.shapes.forEach(shape => {
+    if (!shape.points || shape.points.length < 3) return;
+    c.save(); c.globalAlpha = layer.opacity;
+    if (layer.fillType && layer.fillType !== 'solid') {
+      const pat = makeTexturePattern(c, layer.fillType, layer.color);
+      c.fillStyle = pat || layer.color;
+    } else { c.fillStyle = layer.color; }
+    c.beginPath(); c.moveTo(shape.points[0].x, shape.points[0].y);
+    for (let i = 1; i < shape.points.length; i++) c.lineTo(shape.points[i].x, shape.points[i].y);
+    c.closePath(); c.fill();
+    if (layer.id === state.activeLayerId && state.mode === 'view') {
+      c.globalAlpha = 1; c.strokeStyle = '#ff8c42'; c.lineWidth = 2/state.view.scale;
+      c.setLineDash([6/state.view.scale, 4/state.view.scale]); c.stroke(); c.setLineDash([]);
+    }
+    c.restore();
+  });
+}
+
+// ===== Build 4: Logos =====
+const logoFileInput = document.getElementById('logoFileInput');
+logoFileInput.addEventListener('change', e => { if (e.target.files[0]) { const reader = new FileReader(); reader.onload = ev => addLogo(ev.target.result); reader.readAsDataURL(e.target.files[0]); } logoFileInput.value = ''; });
+
+function addLogo(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    const maxW = state.shoeImage ? state.shoeImage.width * 0.3 : 200;
+    const scale = Math.min(1, maxW / img.width);
+    const logo = { id: uid(), imgEl: img, data: dataUrl, x: state.shoeImage ? state.shoeImage.width*0.35 : 50, y: state.shoeImage ? state.shoeImage.height*0.35 : 50, w: img.width*scale, h: img.height*scale, rot: 0, opacity: 1, hidden: false };
+    pushHistory(); state.logos.push(logo); state.activeLogoId = logo.id; saveProject(); render();
+    showToast('Logo added · drag to position'); refreshPanelIfOpen();
+  };
+  img.src = dataUrl;
+}
+function deleteLogo(id) { pushHistory(); state.logos = state.logos.filter(l => l.id !== id); state.activeLogoId = null; saveProject(); render(); refreshPanelIfOpen(); }
+
+// ===== Build 4: Texts =====
+function addText(str) {
+  if (!str || !str.trim()) return;
+  const t = { id: uid(), text: str, x: state.shoeImage ? state.shoeImage.width*0.2 : 100, y: state.shoeImage ? state.shoeImage.height*0.5 : 200, fontSize: Math.max(24, Math.round((state.shoeImage ? state.shoeImage.width : 400)*0.08)), color: '#ffffff', fontFamily: 'system-ui', rot: 0, opacity: 1, outline: true, outlineColor: '#000000', hidden: false };
+  pushHistory(); state.texts.push(t); state.activeTextId = t.id; saveProject(); render();
+  showToast('Text added · drag to position'); refreshPanelIfOpen();
+}
+function deleteText(id) { pushHistory(); state.texts = state.texts.filter(t => t.id !== id); state.activeTextId = null; saveProject(); render(); refreshPanelIfOpen(); }
+
+// Draw logos and texts on canvas
+function drawLogosAndTexts(c) {
+  state.logos.forEach(logo => {
+    if (!logo.imgEl || logo.hidden) return;
+    c.save(); c.globalAlpha = logo.opacity ?? 1;
+    const cx = logo.x + logo.w/2, cy = logo.y + logo.h/2;
+    c.translate(cx, cy); c.rotate((logo.rot||0) * Math.PI/180);
+    c.drawImage(logo.imgEl, -logo.w/2, -logo.h/2, logo.w, logo.h);
+    if (logo.id === state.activeLogoId) { c.strokeStyle='#ff8c42'; c.lineWidth=2/state.view.scale; c.setLineDash([5/state.view.scale,3/state.view.scale]); c.strokeRect(-logo.w/2,-logo.h/2,logo.w,logo.h); c.setLineDash([]); }
+    c.restore();
+  });
+  state.texts.forEach(t => {
+    if (t.hidden) return;
+    c.save(); c.globalAlpha = t.opacity ?? 1;
+    c.translate(t.x, t.y); c.rotate((t.rot||0) * Math.PI/180);
+    const fs = t.fontSize || 48;
+    c.font = `bold ${fs}px ${t.fontFamily || 'system-ui'}`;
+    if (t.outline) { c.strokeStyle = t.outlineColor||'#000'; c.lineWidth = fs*0.06; c.strokeText(t.text||'', 0, 0); }
+    c.fillStyle = t.color || '#fff'; c.fillText(t.text||'', 0, 0);
+    if (t.id === state.activeTextId) { const m = c.measureText(t.text||''); c.strokeStyle='#ff8c42'; c.lineWidth=2/state.view.scale; c.setLineDash([5/state.view.scale,3/state.view.scale]); c.strokeRect(0,-fs,m.width,fs*1.2); c.setLineDash([]); }
+    c.restore();
+  });
+}
+
+// Logo/text drag — check on pointerdown in view mode
+function tryStartLogoDrag(screenP) {
+  const ip = screenToImage(screenP.x, screenP.y);
+  for (let i = state.logos.length-1; i >= 0; i--) {
+    const logo = state.logos[i]; if (logo.hidden) continue;
+    if (ip.x >= logo.x && ip.x <= logo.x+logo.w && ip.y >= logo.y && ip.y <= logo.y+logo.h) {
+      state.activeLogoId = logo.id; state.activeTextId = null;
+      state.activeDragGesture = { type:'logo', id:logo.id, startObjX:logo.x, startObjY:logo.y, startX:ip.x, startY:ip.y };
+      render(); return true;
+    }
+  }
+  for (let i = state.texts.length-1; i >= 0; i--) {
+    const t = state.texts[i]; if (t.hidden) continue;
+    const fs = t.fontSize || 48;
+    if (ip.x >= t.x && ip.x <= t.x + fs*(t.text.length)*0.6 && ip.y >= t.y-fs && ip.y <= t.y+fs*0.2) {
+      state.activeTextId = t.id; state.activeLogoId = null;
+      state.activeDragGesture = { type:'text', id:t.id, startObjX:t.x, startObjY:t.y, startX:ip.x, startY:ip.y };
+      render(); return true;
+    }
+  }
+  state.activeLogoId = null; state.activeTextId = null; render(); return false;
+}
+function moveDragObj(screenP) {
+  if (!state.activeDragGesture) return;
+  const ip = screenToImage(screenP.x, screenP.y);
+  const dx = ip.x - state.activeDragGesture.startX, dy = ip.y - state.activeDragGesture.startY;
+  if (state.activeDragGesture.type === 'logo') { const l = state.logos.find(x => x.id === state.activeDragGesture.id); if (l) { l.x = state.activeDragGesture.startObjX+dx; l.y = state.activeDragGesture.startObjY+dy; } }
+  else if (state.activeDragGesture.type === 'text') { const t = state.texts.find(x => x.id === state.activeDragGesture.id); if (t) { t.x = state.activeDragGesture.startObjX+dx; t.y = state.activeDragGesture.startObjY+dy; } }
+  render();
+}
+
+// ===== Build 5: Lighting render (shadow/highlight added into main render) =====
+// This patches the render function's layer loop — shadows use multiply, highlights use screen
+// The actual render() is updated below with a full replacement
+
+// ===== Build 6: Export =====
+function buildFlatCanvas() {
+  const out = document.createElement('canvas'); out.width = state.shoeImage.width; out.height = state.shoeImage.height;
+  const oc = out.getContext('2d');
+  oc.drawImage(state.shoeImage, 0, 0);
+  state.layers.filter(l => l.role === 'zone' || !l.role).forEach(l => drawLayerShapes(oc, l));
+  state.logos.forEach(logo => { if (!logo.imgEl || logo.hidden) return; oc.save(); oc.globalAlpha=logo.opacity??1; const cx=logo.x+logo.w/2, cy=logo.y+logo.h/2; oc.translate(cx,cy); oc.rotate((logo.rot||0)*Math.PI/180); oc.drawImage(logo.imgEl,-logo.w/2,-logo.h/2,logo.w,logo.h); oc.restore(); });
+  state.texts.forEach(t => { if (t.hidden) return; oc.save(); oc.globalAlpha=t.opacity??1; oc.translate(t.x,t.y); oc.rotate((t.rot||0)*Math.PI/180); const fs=t.fontSize||48; oc.font=`bold ${fs}px ${t.fontFamily||'system-ui'}`; if(t.outline){oc.strokeStyle=t.outlineColor||'#000';oc.lineWidth=fs*0.06;oc.strokeText(t.text||'',0,0);} oc.fillStyle=t.color||'#fff'; oc.fillText(t.text||'',0,0); oc.restore(); });
+  const lacesL = state.layers.find(l => l.role === 'laces');
+  if (lacesL && lacesL.visible) { if (!lacesL.laceStyle || lacesL.laceStyle === 'original') drawLayerShapes(oc, lacesL); else if (lacesL.laceStyle !== 'none') { const sv=state.view.scale; state.view.scale=1; drawProceduralLaces(oc,lacesL); state.view.scale=sv; } }
+  const shadowL = state.layers.find(l => l.role === 'shadows');
+  if (shadowL && shadowL.visible && shadowL.shapes?.length > 0) { oc.save(); oc.globalCompositeOperation='multiply'; drawLayerShapes(oc,shadowL); oc.restore(); }
+  const hlL = state.layers.find(l => l.role === 'highlights');
+  if (hlL && hlL.visible && hlL.shapes?.length > 0) { oc.save(); oc.globalCompositeOperation='screen'; drawLayerShapes(oc,hlL); oc.restore(); }
+  return out;
+}
+
+function exportFlatPNG() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  buildFlatCanvas().toBlob(blob => { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`lacelayer-${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('Flat PNG downloaded'); });
+}
+
+function exportTransparentPNG() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  const out = document.createElement('canvas'); out.width=state.shoeImage.width; out.height=state.shoeImage.height;
+  const oc = out.getContext('2d');
+  state.layers.filter(l => l.role==='zone'||!l.role).forEach(l => drawLayerShapes(oc,l));
+  state.logos.forEach(logo => { if (!logo.imgEl||logo.hidden) return; oc.save(); oc.globalAlpha=logo.opacity??1; const cx=logo.x+logo.w/2,cy=logo.y+logo.h/2; oc.translate(cx,cy); oc.rotate((logo.rot||0)*Math.PI/180); oc.drawImage(logo.imgEl,-logo.w/2,-logo.h/2,logo.w,logo.h); oc.restore(); });
+  state.texts.forEach(t => { if(t.hidden)return; oc.save(); oc.globalAlpha=t.opacity??1; oc.translate(t.x,t.y); oc.rotate((t.rot||0)*Math.PI/180); const fs=t.fontSize||48; oc.font=`bold ${fs}px ${t.fontFamily||'system-ui'}`; if(t.outline){oc.strokeStyle=t.outlineColor||'#000';oc.lineWidth=fs*0.06;oc.strokeText(t.text||'',0,0);} oc.fillStyle=t.color||'#fff'; oc.fillText(t.text||'',0,0); oc.restore(); });
+  out.toBlob(blob => { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`lacelayer-transparent-${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('Transparent PNG downloaded'); });
+}
+
+function exportDesignJSON() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  const json = { project:'LaceLayer Design', exportedAt:new Date().toISOString(), layers:state.layers.map(l => ({ name:l.name, role:l.role||'zone', color:l.color, fillType:l.fillType||'solid', opacity:l.opacity, visible:l.visible, shapeCount:(l.shapes||[]).length, ...(l.role==='laces'?{laceStyle:l.laceStyle,laceColor:l.laceColor,laceThickness:l.laceThickness,eyeletPairs:Math.floor((l.laceEyelets||[]).length/2)}:{}) })), logos:state.logos.map(l=>({x:Math.round(l.x),y:Math.round(l.y),w:Math.round(l.w),h:Math.round(l.h),rot:l.rot,opacity:l.opacity})), texts:state.texts.map(t=>({text:t.text,x:Math.round(t.x),y:Math.round(t.y),fontSize:t.fontSize,color:t.color,fontFamily:t.fontFamily,outline:t.outline,outlineColor:t.outlineColor})) };
+  const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`lacelayer-handoff-${Date.now()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('Handoff JSON downloaded');
+}
+
+function exportDesignSheet() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  const sheetW=1200,sheetH=700,leftW=700;
+  const sheet=document.createElement('canvas'); sheet.width=sheetW; sheet.height=sheetH;
+  const sc=sheet.getContext('2d');
+  sc.fillStyle='#0f0f0f'; sc.fillRect(0,0,sheetW,sheetH);
+  sc.fillStyle='#1a1a1a'; sc.fillRect(0,0,leftW,sheetH);
+  const shoe=buildFlatCanvas();
+  const ratio=Math.min((leftW-60)/shoe.width,(sheetH-60)/shoe.height);
+  const sw=shoe.width*ratio,sh=shoe.height*ratio,sx=(leftW-sw)/2,sy=(sheetH-sh)/2;
+  sc.drawImage(shoe,sx,sy,sw,sh);
+  sc.fillStyle='#ff8c42'; sc.font='bold 22px system-ui'; sc.textAlign='left'; sc.fillText('LACELAYER STUDIO',leftW+24,44);
+  sc.fillStyle='#666'; sc.font='13px system-ui'; sc.fillText(new Date().toLocaleDateString(),leftW+24,66);
+  sc.fillStyle='rgba(255,255,255,0.06)'; sc.fillRect(leftW+24,80,sheetW-leftW-48,1);
+  sc.fillStyle='#ff8c42'; sc.font='bold 13px system-ui'; sc.fillText('ZONES',leftW+24,104);
+  let sy2=120;
+  state.layers.filter(l=>l.role==='zone'&&(l.shapes||[]).length>0).forEach(l=>{
+    if (sy2>sheetH-80) return;
+    sc.fillStyle=l.color; sc.beginPath(); if(sc.roundRect)sc.roundRect(leftW+24,sy2,28,28,4);else sc.rect(leftW+24,sy2,28,28); sc.fill();
+    sc.fillStyle='#f5f5f5'; sc.font='bold 13px system-ui'; sc.fillText(l.name,leftW+60,sy2+14);
+    sc.fillStyle='#888'; sc.font='11px system-ui'; sc.fillText(l.color.toUpperCase()+' · '+(l.fillType||'solid'),leftW+60,sy2+28);
+    sy2+=46;
+  });
+  const lacesL=state.layers.find(l=>l.role==='laces');
+  if(lacesL&&lacesL.laceStyle&&lacesL.laceStyle!=='original'&&sy2<sheetH-80){
+    sc.fillStyle='rgba(255,255,255,0.06)'; sc.fillRect(leftW+24,sy2,sheetW-leftW-48,1); sy2+=16;
+    sc.fillStyle='#ff8c42'; sc.font='bold 13px system-ui'; sc.fillText('LACES',leftW+24,sy2+14); sy2+=30;
+    sc.fillStyle='#f5f5f5'; sc.font='13px system-ui'; sc.fillText(`Style: ${lacesL.laceStyle} · Color: ${(lacesL.laceColor||'#fff').toUpperCase()}`,leftW+24,sy2); sy2+=24;
+  }
+  sc.fillStyle='#333'; sc.font='11px system-ui'; sc.textAlign='center'; sc.fillText('Made with LaceLayer Studio · github.com/largentseahawk80-lgtm/LACELAYER',sheetW/2,sheetH-16);
+  sheet.toBlob(blob=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`lacelayer-sheet-${Date.now()}.png`;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Design sheet downloaded');});
+}
+
+// ===== Build 7: AI Auto-Zones =====
+async function runAiAutoZones() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  if (!settings.anthropicKey) { showToast('Add Anthropic API key in Settings ⚙ first',3000); openPanel('settings'); return; }
+  showToast('AI analyzing shoe… ~15 seconds',4000);
+  try {
+    const maxDim=800, c=document.createElement('canvas');
+    const ratio=Math.min(1,maxDim/state.shoeImage.width,maxDim/state.shoeImage.height);
+    c.width=Math.round(state.shoeImage.width*ratio); c.height=Math.round(state.shoeImage.height*ratio);
+    c.getContext('2d').drawImage(state.shoeImage,0,0,c.width,c.height);
+    const b64=c.toDataURL('image/jpeg',0.8).split(',')[1];
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':settings.anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({ model:'claude-opus-4-5', max_tokens:1500, messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+        {type:'text',text:`Analyze this shoe image. Return ONLY a JSON array, no other text or markdown.
+Each element: {"name":string,"points":[[x,y],...]} where x,y are percentages of image width/height (0-100).
+Use these names where visible: Toe Box, Side Panel, Heel Panel, Collar, Tongue, Sole, Midsole.
+Return 3-7 zones max. Polygons should closely outline each part.
+Example: [{"name":"Toe Box","points":[[10,20],[40,20],[42,55],[8,58]]}]`}
+      ]}]})
+    });
+    if (!resp.ok) { const err=await resp.json(); throw new Error(err.error?.message||'API error '+resp.status); }
+    const data=await resp.json();
+    const text=data.content.find(b=>b.type==='text')?.text||'';
+    const zones=JSON.parse(text.replace(/```json|```/g,'').trim());
+    if (!Array.isArray(zones)||zones.length===0) throw new Error('No zones returned');
+    const iw=state.shoeImage.width, ih=state.shoeImage.height;
+    let added=0;
+    zones.forEach(z=>{
+      if(!z.name||!Array.isArray(z.points)||z.points.length<3)return;
+      let layer=state.layers.find(l=>l.name.toLowerCase()===z.name.toLowerCase());
+      if(!layer){layer=addLayer({name:z.name,color:DEFAULT_PALETTE[added%DEFAULT_PALETTE.length]});}
+      if(layer.locked)return;
+      if(!layer.shapes)layer.shapes=[];
+      layer.shapes.push({points:z.points.map(p=>({x:(p[0]/100)*iw,y:(p[1]/100)*ih}))});
+      added++;
+    });
+    pushHistory(); saveProject(); render(); refreshPanelIfOpen();
+    showToast(`AI placed ${added} zone${added!==1?'s':''} · adjust with ✏️`);
+  } catch(e) {
+    console.error('AI zone error:',e);
+    showToast('AI failed: '+e.message.slice(0,60),3500);
+  }
+}
+
+function runEdgeAutoZones() {
+  if (!state.shoeImage) { showToast('Import a shoe first'); return; }
+  showToast('Placing rough zones…',2000);
+  setTimeout(()=>{
+    const w=state.shoeImage.width, h=state.shoeImage.height;
+    const roughZones=[
+      {name:'Sole',      color:'#264653', points:[{x:w*0.05,y:h*0.72},{x:w*0.95,y:h*0.72},{x:w*0.95,y:h*0.97},{x:w*0.05,y:h*0.97}]},
+      {name:'Midsole',   color:'#a8dadc', points:[{x:w*0.05,y:h*0.60},{x:w*0.95,y:h*0.60},{x:w*0.95,y:h*0.72},{x:w*0.05,y:h*0.72}]},
+      {name:'Side Panel',color:'#457b9d', points:[{x:w*0.05,y:h*0.15},{x:w*0.95,y:h*0.15},{x:w*0.95,y:h*0.60},{x:w*0.05,y:h*0.60}]},
+      {name:'Toe Box',   color:'#e63946', points:[{x:w*0.05,y:h*0.10},{x:w*0.35,y:h*0.08},{x:w*0.38,y:h*0.60},{x:w*0.05,y:h*0.60}]},
+    ];
+    let added=0;
+    roughZones.forEach(z=>{
+      let layer=state.layers.find(l=>l.name.toLowerCase()===z.name.toLowerCase());
+      if(!layer)layer=addLayer({name:z.name,color:z.color});
+      if(layer.locked)return;
+      if(!layer.shapes)layer.shapes=[];
+      if(layer.shapes.length===0){layer.shapes.push({points:z.points});added++;}
+    });
+    pushHistory(); saveProject(); render(); refreshPanelIfOpen();
+    showToast(`${added} rough zones placed — refine with ✏️ Draw`,3000);
+  },200);
+}
+resizeCanvas();
+loadSettings();
+loadRecents();
+handleSharedUrl();
+loadCurrentProject().then(loaded => {
+  if (loaded) showToast('Welcome back · last project loaded');
+});
+</script>
+</body>
 </html>
